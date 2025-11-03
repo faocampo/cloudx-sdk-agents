@@ -153,22 +153,23 @@ download_agent() {
 install_platform_agents() {
     local target_dir=$1
     local platform_name=$2
-    local -n agents_array=$3  # nameref to array
+    shift 2
+    local agents=("$@")  # Remaining arguments are agent names
 
     print_info "Installing ${platform_name} agents..."
 
     local success_count=0
-    for agent in "${agents_array[@]}"; do
+    for agent in "${agents[@]}"; do
         if download_agent "$agent" "$target_dir" "$platform_name"; then
             ((success_count++))
         fi
     done
 
-    if [ $success_count -eq ${#agents_array[@]} ]; then
+    if [ $success_count -eq ${#agents[@]} ]; then
         print_success "Installed all ${success_count} ${platform_name} agents"
         return 0
     else
-        print_error "Only installed ${success_count}/${#agents_array[@]} ${platform_name} agents"
+        print_error "Only installed ${success_count}/${#agents[@]} ${platform_name} agents"
         return 1
     fi
 }
@@ -187,20 +188,20 @@ install_global() {
     # Install based on platform selection
     case $PLATFORM in
         android)
-            install_platform_agents "$agent_dir" "android" ANDROID_AGENTS
+            install_platform_agents "$agent_dir" "android" "${ANDROID_AGENTS[@]}"
             total_success=$?
             total_agents=${#ANDROID_AGENTS[@]}
             ;;
         flutter)
-            install_platform_agents "$agent_dir" "flutter" FLUTTER_AGENTS
+            install_platform_agents "$agent_dir" "flutter" "${FLUTTER_AGENTS[@]}"
             total_success=$?
             total_agents=${#FLUTTER_AGENTS[@]}
             ;;
         all)
-            install_platform_agents "$agent_dir" "android" ANDROID_AGENTS
+            install_platform_agents "$agent_dir" "android" "${ANDROID_AGENTS[@]}"
             local android_success=$?
             echo ""
-            install_platform_agents "$agent_dir" "flutter" FLUTTER_AGENTS
+            install_platform_agents "$agent_dir" "flutter" "${FLUTTER_AGENTS[@]}"
             local flutter_success=$?
             total_agents=$((${#ANDROID_AGENTS[@]} + ${#FLUTTER_AGENTS[@]}))
             if [ $android_success -eq 0 ] && [ $flutter_success -eq 0 ]; then
@@ -228,18 +229,18 @@ install_local() {
     # Install based on platform selection
     case $PLATFORM in
         android)
-            install_platform_agents "$agent_dir" "android" ANDROID_AGENTS
+            install_platform_agents "$agent_dir" "android" "${ANDROID_AGENTS[@]}"
             total_success=$?
             ;;
         flutter)
-            install_platform_agents "$agent_dir" "flutter" FLUTTER_AGENTS
+            install_platform_agents "$agent_dir" "flutter" "${FLUTTER_AGENTS[@]}"
             total_success=$?
             ;;
         all)
-            install_platform_agents "$agent_dir" "android" ANDROID_AGENTS
+            install_platform_agents "$agent_dir" "android" "${ANDROID_AGENTS[@]}"
             local android_success=$?
             echo ""
-            install_platform_agents "$agent_dir" "flutter" FLUTTER_AGENTS
+            install_platform_agents "$agent_dir" "flutter" "${FLUTTER_AGENTS[@]}"
             local flutter_success=$?
             if [ $android_success -eq 0 ] && [ $flutter_success -eq 0 ]; then
                 total_success=0
