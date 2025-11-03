@@ -1495,9 +1495,9 @@ CloudXAdViewListener(
 1. **Test your integration thoroughly**
 2. **Run agents for validation**:
    ```
-   Use cloudx-flutter-auditor to verify integration
-   Use cloudx-flutter-build-verifier to build project
-   Use cloudx-flutter-privacy-checker for compliance
+   Use @agent-cloudx-flutter-auditor to verify integration
+   Use @agent-cloudx-flutter-build-verifier to build project
+   Use @agent-cloudx-flutter-privacy-checker for compliance
    ```
 3. **Read [Orchestration Guide](./ORCHESTRATION.md)** for multi-agent workflows
 4. **Deploy to production**

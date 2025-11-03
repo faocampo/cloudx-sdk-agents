@@ -389,11 +389,11 @@ show_next_steps() {
             echo -e "   ${YELLOW}Use cloudx-android-integrator to integrate CloudX SDK with app key: YOUR_KEY${NC}"
             ;;
         flutter)
-            echo -e "   ${YELLOW}Use cloudx-flutter-integrator to integrate CloudX SDK with app key: YOUR_KEY${NC}"
+            echo -e "   ${YELLOW}Use @agent-cloudx-integrator to integrate CloudX SDK with app key: YOUR_KEY${NC}"
             ;;
         all)
             echo -e "   Android: ${YELLOW}Use cloudx-android-integrator to integrate CloudX SDK${NC}"
-            echo -e "   Flutter: ${YELLOW}Use cloudx-flutter-integrator to integrate CloudX SDK${NC}"
+            echo -e "   Flutter: ${YELLOW}Use @agent-cloudx-integrator to integrate CloudX SDK${NC}"
             ;;
     esac
 
