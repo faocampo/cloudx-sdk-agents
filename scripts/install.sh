@@ -99,7 +99,7 @@ check_claude_code() {
 download_agent() {
     local agent_name=$1
     local target_dir=$2
-    local url="${BASE_URL}/.claude/agents/${agent_name}.md"
+    local url="${BASE_URL}/.claude/agents/android/${agent_name}.md"
     local target_file="${target_dir}/${agent_name}.md"
 
     if curl -fsSL "$url" -o "$target_file" 2>/dev/null; then
@@ -244,9 +244,9 @@ show_next_steps() {
     echo "   ✓ Run build verification"
     echo ""
     echo "📚 Documentation:"
-    echo "   • Setup Guide: https://github.com/${REPO_OWNER}/${REPO_NAME}/blob/${BRANCH}/.claude/docs/SETUP.md"
-    echo "   • Integration Guide: https://github.com/${REPO_OWNER}/${REPO_NAME}/blob/${BRANCH}/.claude/docs/INTEGRATION_GUIDE.md"
-    echo "   • Agent Reference: https://github.com/${REPO_OWNER}/${REPO_NAME}/blob/${BRANCH}/.claude/README.md"
+    echo "   • Setup Guide: https://github.com/${REPO_OWNER}/${REPO_NAME}/blob/${BRANCH}/docs/android/SETUP.md"
+    echo "   • Integration Guide: https://github.com/${REPO_OWNER}/${REPO_NAME}/blob/${BRANCH}/docs/android/INTEGRATION_GUIDE.md"
+    echo "   • Agent Reference: https://github.com/${REPO_OWNER}/${REPO_NAME}/blob/${BRANCH}/README.md"
     echo "   • SDK Docs: https://github.com/${REPO_OWNER}/${REPO_NAME}"
     echo ""
     echo "💬 Need Help?"
