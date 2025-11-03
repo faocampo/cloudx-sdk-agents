@@ -15,7 +15,7 @@ NC='\033[0m' # No Color
 
 # Configuration
 REPO_OWNER="cloudx-io"
-REPO_NAME="cloudexchange.android.sdk"
+REPO_NAME="cloudx-sdk-agents"
 # Allow branch override via --branch argument or BRANCH env var, default to 'main'
 BRANCH="main"
 

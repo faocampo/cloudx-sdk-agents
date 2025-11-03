@@ -1,0 +1,25 @@
+name: Validate Agent Sync
+
+on:
+  pull_request:
+    branches: [main]
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate agent APIs
+        run: bash scripts/validate_agent_apis.sh
+
+      - name: Check SDK version
+        run: grep -q "sdk_version:" SDK_VERSION.yaml
+
+      # Future: Add example project testing when available
+      # - name: Test examples
+      #   run: |
+      #     if [ -d "examples/basic-integration" ]; then
+      #       cd examples/basic-integration
+      #       ./gradlew build
+      #     fi
