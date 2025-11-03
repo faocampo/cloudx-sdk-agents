@@ -1,0 +1,180 @@
+# CloudX SDK Version Tracking for Agent Documentation
+# This file tracks which SDK version the agent documentation is synchronized with
+
+sdk_version: "0.5.0"
+agents_last_updated: "2025-11-03"
+verified_against_commit: "3b82ced"  # Fixed agent documentation API references
+
+# Critical API signatures that agents depend on
+api_signatures:
+  initialization:
+    class: "CloudXInitializationParams"
+    constructor: "CloudXInitializationParams(appKey: String)"
+    listener: "CloudXInitializationListener"
+    callbacks:
+      - "onInitialized()"
+      - "onInitializationFailed(cloudXError: CloudXError)"
+
+  banner:
+    factory: "CloudX.createBanner(placementName: String): CloudXAdView"
+    listener: "CloudXAdViewListener"
+    load_required: true
+    callbacks:
+      - "onAdLoaded(cloudXAd: CloudXAd)"
+      - "onAdLoadFailed(cloudXError: CloudXError)"
+      - "onAdDisplayed(cloudXAd: CloudXAd)"
+      - "onAdClicked(cloudXAd: CloudXAd)"
+      - "onAdHidden(cloudXAd: CloudXAd)"
+      - "onAdDisplayFailed(cloudXError: CloudXError)"
+      - "onAdExpanded(cloudXAd: CloudXAd)"
+      - "onAdCollapsed(cloudXAd: CloudXAd)"
+
+  interstitial:
+    factory: "CloudX.createInterstitial(placementName: String): CloudXInterstitialAd"
+    listener: "CloudXInterstitialListener"
+    load_required: true
+    ready_check: "isAdReady: Boolean"  # property, not method
+    show_method: "show()"  # no parameters
+    callbacks:
+      - "onAdLoaded(cloudXAd: CloudXAd)"
+      - "onAdLoadFailed(cloudXError: CloudXError)"
+      - "onAdDisplayed(cloudXAd: CloudXAd)"
+      - "onAdClicked(cloudXAd: CloudXAd)"
+      - "onAdHidden(cloudXAd: CloudXAd)"
+      - "onAdDisplayFailed(cloudXError: CloudXError)"
+
+  rewarded:
+    factory: "CloudX.createRewardedInterstitial(placementName: String): CloudXRewardedInterstitialAd"
+    listener: "CloudXRewardedInterstitialListener"
+    load_required: true
+    ready_check: "isAdReady: Boolean"
+    show_method: "show()"
+    callbacks:
+      - "onAdLoaded(cloudXAd: CloudXAd)"
+      - "onAdLoadFailed(cloudXError: CloudXError)"
+      - "onAdDisplayed(cloudXAd: CloudXAd)"
+      - "onAdClicked(cloudXAd: CloudXAd)"
+      - "onAdHidden(cloudXAd: CloudXAd)"
+      - "onAdDisplayFailed(cloudXError: CloudXError)"
+      - "onUserRewarded(cloudXAd: CloudXAd)"
+
+  privacy:
+    class: "CloudXPrivacy"
+    constructor: "CloudXPrivacy(isUserConsent: Boolean?, isAgeRestrictedUser: Boolean?)"
+    setter: "CloudX.setPrivacy(privacy: CloudXPrivacy)"
+
+# Files that contain API references (must be updated when SDK changes)
+agent_files:
+  - path: ".claude/agents/cloudx-integrator.md"
+    api_references:
+      - "CloudXInitializationParams"
+      - "CloudXInitializationListener"
+      - "CloudX.createBanner"
+      - "CloudX.createInterstitial"
+      - "CloudX.createRewardedInterstitial"
+      - "CloudXAdViewListener"
+      - "CloudXInterstitialListener"
+      - "CloudXRewardedInterstitialListener"
+      - "isAdReady"
+      - "show()"
+      - "load()"
+
+  - path: ".claude/agents/cloudx-auditor.md"
+    api_references:
+      - "onAdLoadFailed"
+      - "CloudXError"
+      - "isAdReady"
+
+  - path: ".claude/agents/cloudx-privacy-checker.md"
+    api_references:
+      - "CloudXPrivacy"
+      - "isUserConsent"
+      - "isAgeRestrictedUser"
+      - "CloudX.setPrivacy"
+
+  - path: "integration_agent_claude.md"
+    api_references:
+      - "ALL"  # Comprehensive guide, references all APIs
+
+  - path: "CLOUDX_SUBAGENTS.md"
+    api_references:
+      - "ALL"  # Orchestration guide
+
+  - path: ".claude/agents/cloudx-android-agent-maintainer.md"
+    api_references:
+      - "ALL"  # Agent maintainer references all APIs for validation/sync
+
+# Update checklist (what to do when SDK version changes)
+update_checklist:
+  - "Update sdk_version field above"
+  - "Run ./scripts/validate_agent_apis.sh"
+  - "Review git diff for public API changes"
+  - "Update agent files with new API names"
+  - "Update code examples in integration_agent_claude.md"
+  - "Run agent validation tests"
+  - "Update agents_last_updated date"
+  - "Commit with message: 'Update agents for SDK vX.X.X'"
+
+# Known breaking changes to watch for
+breaking_change_patterns:
+  - "Renamed classes (e.g., CloudXInitParams → CloudXInitializationParams)"
+  - "Changed method signatures (parameters added/removed)"
+  - "Changed callback signatures"
+  - "Removed deprecated APIs"
+  - "Changed property types (method → property like isReady → isAdReady)"
+  - "Changed parameter order"
+  - "New required parameters"
+
+# Contact for SDK changes
+maintainer_contacts:
+  sdk_team: "cloudx-sdk-team@example.com"
+  agent_maintainer: "Update this with your contact"
+
+# Validation coverage (what we actually check)
+validation_coverage:
+  what_we_validate:
+    - "Class and interface names exist in SDK"
+    - "Factory method names exist (createBanner, createInterstitial, etc.)"
+    - "Privacy API class and field names correct"
+    - "Deprecated API patterns not in agent docs (outside VALIDATION:IGNORE)"
+    - "onAdLoaded callback signature uses CloudXAd parameter"
+
+  what_we_dont_validate:
+    - "Method signatures (parameter count, types, order)"
+    - "Return types of methods"
+    - "All callback signatures (only check 1 of 10+)"
+    - "Code examples compile against SDK"
+    - "New SDK features are documented"
+    - "Removed SDK features cleaned from docs"
+    - "Property vs method (isAdReady property vs isReady() method)"
+    - "Required vs optional parameters"
+    - "Complete API coverage (only ~20% of public APIs checked)"
+
+  validation_level: "smoke_test"
+  # Options: smoke_test, integration_test, comprehensive
+  # Current: smoke_test - catches major breakage (renamed classes, removed methods)
+  # Future: comprehensive - validates signatures, compiles examples, checks coverage
+
+  known_risks:
+    - "SDK could add new ad formats (native, MREC) - agents won't know"
+    - "Method parameters could change - agents show wrong signature"
+    - "New error codes added - agents can't help troubleshoot"
+    - "Breaking changes in minor versions - validation might not catch"
+
+  improvement_roadmap:
+    - issue: "TBD"
+      title: "Add code example compilation validation"
+      priority: "P1"
+      effort: "Medium"
+    - issue: "TBD"
+      title: "Add API coverage validation (check all public APIs documented)"
+      priority: "P1"
+      effort: "Low"
+    - issue: "TBD"
+      title: "Add reflection-based signature validation"
+      priority: "P2"
+      effort: "Medium"
+    - issue: "TBD"
+      title: "Add AST-based comprehensive validation"
+      priority: "P2"
+      effort: "High"
