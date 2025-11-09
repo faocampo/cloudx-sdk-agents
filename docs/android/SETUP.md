@@ -79,7 +79,7 @@ You should have:
 Install CloudX agents globally to your machine:
 
 ```bash
-bash <(curl -fsSL https://raw.githubusercontent.com/cloudx-io/cloudexchange.android.sdk/main/install.sh)
+bash <(curl -fsSL https://raw.githubusercontent.com/cloudx-io/cloudx-sdk-agents/main/scripts/install.sh
 ```
 
 This installs 4 agents to `~/.claude/agents/` and makes them available for all your projects.
@@ -89,7 +89,7 @@ This installs 4 agents to `~/.claude/agents/` and makes them available for all y
 **Global Installation (Recommended):**
 ```bash
 # Download install script
-curl -fsSL https://raw.githubusercontent.com/cloudx-io/cloudexchange.android.sdk/main/install.sh -o install.sh
+curl -fsSL https://raw.githubusercontent.com/cloudx-io/cloudx-sdk-agents/main/install.sh -o install.sh
 
 # Run installer
 bash install.sh --global
@@ -101,7 +101,7 @@ ls ~/.claude/agents/
 **Local Installation (Project-Specific):**
 ```bash
 # In your Android project directory
-curl -fsSL https://raw.githubusercontent.com/cloudx-io/cloudexchange.android.sdk/main/install.sh -o install.sh
+curl -fsSL https://raw.githubusercontent.com/cloudx-io/cloudx-sdk-agents/main/install.sh -o install.sh
 
 # Run installer locally
 bash install.sh --local
@@ -116,13 +116,13 @@ ls .claude/agents/
 mkdir -p ~/.claude/agents
 
 # Download each agent
-curl -fsSL https://raw.githubusercontent.com/cloudx-io/cloudexchange.android.sdk/main/.claude/agents/cloudx-android-integrator.md \
+curl -fsSL https://raw.githubusercontent.com/cloudx-io/cloudx-sdk-agents/main/.claude/agents/cloudx-android-integrator.md \
   -o ~/.claude/agents/cloudx-android-integrator.md
-curl -fsSL https://raw.githubusercontent.com/cloudx-io/cloudexchange.android.sdk/main/.claude/agents/cloudx-android-auditor.md \
+curl -fsSL https://raw.githubusercontent.com/cloudx-io/cloudx-sdk-agents/main/.claude/agents/cloudx-android-auditor.md \
   -o ~/.claude/agents/cloudx-android-auditor.md
-curl -fsSL https://raw.githubusercontent.com/cloudx-io/cloudexchange.android.sdk/main/.claude/agents/cloudx-android-build-verifier.md \
+curl -fsSL https://raw.githubusercontent.com/cloudx-io/cloudx-sdk-agents/main/.claude/agents/cloudx-android-build-verifier.md \
   -o ~/.claude/agents/cloudx-android-build-verifier.md
-curl -fsSL https://raw.githubusercontent.com/cloudx-io/cloudexchange.android.sdk/main/.claude/agents/cloudx-android-privacy-checker.md \
+curl -fsSL https://raw.githubusercontent.com/cloudx-io/cloudx-sdk-agents/main/.claude/agents/cloudx-android-privacy-checker.md \
   -o ~/.claude/agents/cloudx-android-privacy-checker.md
 ```
 
@@ -338,7 +338,7 @@ ls ~/.claude/agents/
 # @agent-cloudx-android-privacy-checker (cloudx-android-privacy-checker.md)
 
 # If missing, reinstall:
-bash <(curl -fsSL https://raw.githubusercontent.com/cloudx-io/cloudexchange.android.sdk/main/install.sh)
+bash <(curl -fsSL https://raw.githubusercontent.com/cloudx-io/cloudx-sdk-agents/main/install.sh)
 ```
 
 ### Build Errors After Integration
@@ -388,7 +388,7 @@ Use @agent-cloudx-android-privacy-checker to validate GDPR and CCPA compliance
 rm -rf ~/.claude/agents/cloudx-*
 
 # Reinstall
-bash <(curl -fsSL https://raw.githubusercontent.com/cloudx-io/cloudexchange.android.sdk/main/install.sh)
+bash <(curl -fsSL https://raw.githubusercontent.com/cloudx-io/cloudx-sdk-agents/main/install.sh)
 ```
 
 ---
@@ -486,9 +486,9 @@ A: Yes! Agents are markdown files you can customize. See [ORCHESTRATION.md](./OR
 
 ## Next Steps
 
-1. ✅ Install agents: `bash <(curl -fsSL https://raw.githubusercontent.com/cloudx-io/cloudexchange.android.sdk/main/install.sh)`
+1. ✅ Install agents: `bash <(curl -fsSL https://raw.githubusercontent.com/cloudx-io/cloudx-sdk-agents/main/install.sh)`
 2. ✅ Open your Android project
-3. ✅ Ask Claude: `"Integrate CloudX SDK with app key: YOUR_KEY"`
+3. ✅ Ask Claude: `"Integrate @agent-cloudx-android-integrator with app key: YOUR_KEY"`
 4. ✅ Review and test changes
 5. ✅ Deploy to production
 6. 📊 Monitor revenue in CloudX dashboard
