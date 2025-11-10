@@ -168,11 +168,14 @@ CloudX.setPrivacy(
 
 ### Installation
 ```bash
-# Install agents globally (recommended for end users)
-bash scripts/install.sh --global
+# Install agents locally to current project (default)
+bash scripts/install.sh
 
-# Install agents locally (project-specific)
+# Install agents locally (explicit)
 bash scripts/install.sh --local
+
+# Install agents globally (available across all projects)
+bash scripts/install.sh --global
 
 # Install from specific branch
 bash scripts/install.sh --branch=develop

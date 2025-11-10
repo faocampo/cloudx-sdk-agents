@@ -76,38 +76,38 @@ You should have:
 
 ### Quick Install (One-Liner)
 
-Install CloudX agents globally to your machine:
+Install CloudX agents to your current project:
 
 ```bash
-bash <(curl -fsSL https://raw.githubusercontent.com/cloudx-io/cloudx-sdk-agents/main/scripts/install.sh
+bash <(curl -fsSL https://raw.githubusercontent.com/cloudx-io/cloudx-sdk-agents/main/scripts/install.sh)
 ```
 
-This installs 4 agents to `~/.claude/agents/` and makes them available for all your projects.
+This installs 4 agents to `.claude/agents/` in your current project directory.
 
 ### Alternative: Manual Installation
 
-**Global Installation (Recommended):**
-```bash
-# Download install script
-curl -fsSL https://raw.githubusercontent.com/cloudx-io/cloudx-sdk-agents/main/install.sh -o install.sh
-
-# Run installer
-bash install.sh --global
-
-# Verify
-ls ~/.claude/agents/
-```
-
-**Local Installation (Project-Specific):**
+**Local Installation (Recommended):**
 ```bash
 # In your Android project directory
-curl -fsSL https://raw.githubusercontent.com/cloudx-io/cloudx-sdk-agents/main/install.sh -o install.sh
+curl -fsSL https://raw.githubusercontent.com/cloudx-io/cloudx-sdk-agents/main/scripts/install.sh -o install.sh
 
 # Run installer locally
 bash install.sh --local
 
 # Verify
 ls .claude/agents/
+```
+
+**Global Installation (Available Across All Projects):**
+```bash
+# Download install script
+curl -fsSL https://raw.githubusercontent.com/cloudx-io/cloudx-sdk-agents/main/scripts/install.sh -o install.sh
+
+# Run installer globally
+bash install.sh --global
+
+# Verify
+ls ~/.claude/agents/
 ```
 
 **Manual Download:**

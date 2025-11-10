@@ -305,19 +305,19 @@ show_usage() {
     echo "Usage: bash install.sh [OPTIONS]"
     echo ""
     echo "Options:"
-    echo "  --global              Install agents globally to ~/.claude/agents/ (default)"
-    echo "  --local               Install agents to current project's .claude/agents/"
+    echo "  --local               Install agents to current project's .claude/agents/ (default)"
+    echo "  --global              Install agents globally to ~/.claude/agents/"
     echo "  --platform=PLATFORM   Choose platform: android, flutter, or all (default: all)"
     echo "  --branch=BRANCH       Install from specific branch (default: main)"
     echo "  --help                Show this help message"
     echo ""
     echo "Examples:"
-    echo "  bash install.sh                           # Install all platforms globally"
-    echo "  bash install.sh --global                  # Install all platforms globally"
+    echo "  bash install.sh                           # Install all platforms locally"
     echo "  bash install.sh --local                   # Install all platforms to current project"
-    echo "  bash install.sh --platform=android        # Install only Android agents"
-    echo "  bash install.sh --platform=flutter        # Install only Flutter agents"
-    echo "  bash install.sh --local --platform=flutter  # Install Flutter agents locally"
+    echo "  bash install.sh --global                  # Install all platforms globally"
+    echo "  bash install.sh --platform=android        # Install only Android agents locally"
+    echo "  bash install.sh --platform=flutter        # Install only Flutter agents locally"
+    echo "  bash install.sh --global --platform=flutter  # Install Flutter agents globally"
 }
 
 # Show next steps
@@ -433,18 +433,18 @@ main() {
     print_header
 
     # Parse arguments
-    local install_type="global"
+    local install_type="local"
 
     case "${1:-}" in
         --help|-h)
             show_usage
             exit 0
             ;;
-        --local|-l)
-            install_type="local"
-            ;;
-        --global|-g|"")
+        --global|-g)
             install_type="global"
+            ;;
+        --local|-l|"")
+            install_type="local"
             ;;
         *)
             print_error "Unknown option: $1"

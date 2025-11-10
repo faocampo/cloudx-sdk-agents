@@ -94,12 +94,12 @@ Before starting, have these ready (or use TODO placeholders):
 
 ### Option 1: One-Line Install (Recommended)
 
-Install **all agents** (Android + Flutter):
+Install **all agents** (Android + Flutter) to current project:
 ```bash
 bash <(curl -fsSL https://raw.githubusercontent.com/cloudx-io/cloudx-sdk-agents/main/scripts/install.sh)
 ```
 
-Install **Flutter agents only**:
+Install **Flutter agents only** to current project:
 ```bash
 bash <(curl -fsSL https://raw.githubusercontent.com/cloudx-io/cloudx-sdk-agents/main/scripts/install.sh) --platform=flutter
 ```
@@ -111,12 +111,12 @@ bash <(curl -fsSL https://raw.githubusercontent.com/cloudx-io/cloudx-sdk-agents/
 git clone https://github.com/cloudx-io/cloudx-sdk-agents.git
 cd cloudx-sdk-agents
 
-# Install globally (available in all projects)
-bash scripts/install.sh --global --platform=flutter
-
-# OR install locally (only in this project)
+# Install locally (recommended - only in this project)
 cd /path/to/your/flutter/project
 bash /path/to/cloudx-sdk-agents/scripts/install.sh --local --platform=flutter
+
+# OR install globally (available in all projects)
+bash scripts/install.sh --global --platform=flutter
 ```
 
 ### Verify Installation
