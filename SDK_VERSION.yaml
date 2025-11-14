@@ -13,7 +13,12 @@ platforms:
     flutter_sdk_min: "3.0.0"
     dart_sdk_min: "3.0.0"
     agents_last_updated: "2025-11-04"
-    verified_against_commit: "TBD"  # Initial Flutter agent implementation
+    verified_against_commit: "0286fe1"  # Initial commit - CloudX Flutter SDK (Nov 12, 2025)
+    # Version Context:
+    #   - v0.1.0-0.2.0 were pre-release test versions on pub.dev (not git-tagged)
+    #   - v0.18.0 (d81acbc) is the first official public release (Nov 12, 2025)
+    #   - These agents were built against v0.1.2 pre-release APIs
+    #   - TODO: Upgrade agents to v0.18.0 and validate API compatibility
 
 # Critical API signatures that agents depend on (Platform-specific)
 api_signatures:
@@ -250,8 +255,8 @@ breaking_change_patterns:
 
 # Contact for SDK changes
 maintainer_contacts:
-  sdk_team: "cloudx-sdk-team@example.com"
-  agent_maintainer: "Update this with your contact"
+  sdk_team: "mobile@cloudx.io"
+  agent_maintainer: "mobile@cloudx.io"
 
 # Validation coverage (what we actually check)
 validation_coverage:
@@ -285,19 +290,20 @@ validation_coverage:
     - "Breaking changes in minor versions - validation might not catch"
 
   improvement_roadmap:
-    - issue: "TBD"
-      title: "Add code example compilation validation"
+    # Note: Create issues at https://github.com/cloudx-io/cloudx-sdk-agents/issues
+    - title: "Add code example compilation validation"
       priority: "P1"
       effort: "Medium"
-    - issue: "TBD"
-      title: "Add API coverage validation (check all public APIs documented)"
+      description: "Validate that all code examples in agent docs compile against the actual SDK"
+    - title: "Add API coverage validation (check all public APIs documented)"
       priority: "P1"
       effort: "Low"
-    - issue: "TBD"
-      title: "Add reflection-based signature validation"
+      description: "Ensure all public SDK APIs are documented in at least one agent"
+    - title: "Add reflection-based signature validation"
       priority: "P2"
       effort: "Medium"
-    - issue: "TBD"
-      title: "Add AST-based comprehensive validation"
+      description: "Use reflection to validate method signatures match SDK implementation"
+    - title: "Add AST-based comprehensive validation"
       priority: "P2"
       effort: "High"
+      description: "Parse SDK source to comprehensively validate all API references"

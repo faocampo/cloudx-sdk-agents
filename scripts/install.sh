@@ -2,7 +2,7 @@
 
 # CloudX SDK - Multi-Platform Agent Installer
 # Installs CloudX integration agents for Claude Code (Android + Flutter)
-# Usage: bash install.sh [--global|--local] [--platform=android|flutter|all]
+# Usage: bash install.sh [--global|--local] [--platform=android|flutter|all] [--yes]
 
 set -e
 
@@ -19,6 +19,12 @@ REPO_NAME="cloudx-sdk-agents"
 # Allow branch override via --branch argument or BRANCH env var, default to 'main'
 BRANCH="main"
 PLATFORM="all"  # Default: install all platforms
+NON_INTERACTIVE="false"  # Default: interactive mode
+
+# Detect CI environment
+if [ -n "$CI" ] || [ -n "$GITHUB_ACTIONS" ] || [ -n "$GITLAB_CI" ] || [ -n "$CIRCLECI" ]; then
+    NON_INTERACTIVE="true"
+fi
 
 # Parse command-line arguments
 for arg in "$@"; do
@@ -29,6 +35,10 @@ for arg in "$@"; do
             ;;
         --platform=*)
             PLATFORM="${arg#*=}"
+            shift
+            ;;
+        --yes|-y|--non-interactive)
+            NON_INTERACTIVE="true"
             shift
             ;;
     esac
@@ -132,13 +142,59 @@ check_claude_code() {
     fi
 }
 
+# Check if Flutter SDK is installed (recommended for Flutter agents)
+check_flutter_sdk() {
+    # Only check if installing Flutter agents
+    if [ "$PLATFORM" != "flutter" ] && [ "$PLATFORM" != "all" ]; then
+        return 0
+    fi
+
+    if command -v flutter &> /dev/null; then
+        local flutter_version=$(flutter --version 2>&1 | head -n 1)
+        print_success "Flutter SDK detected: $flutter_version"
+        return 0
+    else
+        print_warning "Flutter SDK not detected"
+        echo ""
+        echo "   Flutter agents require Flutter SDK to work properly."
+        echo "   You can install agents now and set up Flutter later, but"
+        echo "   the agents won't be able to build/test your Flutter project."
+        echo ""
+        echo "   Install Flutter SDK:"
+        echo -e "   • Visit: ${BLUE}https://flutter.dev/docs/get-started/install${NC}"
+        echo -e "   • macOS: ${BLUE}brew install --cask flutter${NC}"
+        echo -e "   • Verify: ${BLUE}flutter doctor${NC}"
+        echo ""
+
+        if [ "$NON_INTERACTIVE" = "true" ]; then
+            print_warning "Running in non-interactive mode, continuing anyway..."
+            echo ""
+            return 0
+        fi
+
+        read -p "   Continue installation anyway? (y/N) " -n 1 -r
+        echo
+        if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+            echo ""
+            print_info "Installation cancelled. Install Flutter SDK and try again."
+            exit 0
+        fi
+        echo ""
+        return 0
+    fi
+}
+
 # Download a single agent file
 download_agent() {
     local agent_name=$1
     local target_dir=$2
     local platform_subdir=$3  # "android" or "flutter"
     local url="${BASE_URL}/.claude/agents/${platform_subdir}/${agent_name}.md"
-    local target_file="${target_dir}/${agent_name}.md"
+    local platform_dir="${target_dir}/${platform_subdir}"
+    local target_file="${platform_dir}/${agent_name}.md"
+
+    # Create platform subdirectory if it doesn't exist
+    mkdir -p "$platform_dir"
 
     if curl -fsSL "$url" -o "$target_file" 2>/dev/null; then
         print_success "Downloaded ${agent_name}.md"
@@ -268,7 +324,7 @@ verify_installation() {
         android)
             total_expected=${#ANDROID_AGENTS[@]}
             for agent in "${ANDROID_AGENTS[@]}"; do
-                if [ -f "${agent_dir}/${agent}.md" ]; then
+                if [ -f "${agent_dir}/android/${agent}.md" ]; then
                     ((found_count++))
                 fi
             done
@@ -276,15 +332,20 @@ verify_installation() {
         flutter)
             total_expected=${#FLUTTER_AGENTS[@]}
             for agent in "${FLUTTER_AGENTS[@]}"; do
-                if [ -f "${agent_dir}/${agent}.md" ]; then
+                if [ -f "${agent_dir}/flutter/${agent}.md" ]; then
                     ((found_count++))
                 fi
             done
             ;;
         all)
             total_expected=$((${#ANDROID_AGENTS[@]} + ${#FLUTTER_AGENTS[@]}))
-            for agent in "${ANDROID_AGENTS[@]}" "${FLUTTER_AGENTS[@]}"; do
-                if [ -f "${agent_dir}/${agent}.md" ]; then
+            for agent in "${ANDROID_AGENTS[@]}"; do
+                if [ -f "${agent_dir}/android/${agent}.md" ]; then
+                    ((found_count++))
+                fi
+            done
+            for agent in "${FLUTTER_AGENTS[@]}"; do
+                if [ -f "${agent_dir}/flutter/${agent}.md" ]; then
                     ((found_count++))
                 fi
             done
@@ -309,6 +370,8 @@ show_usage() {
     echo "  --global              Install agents globally to ~/.claude/agents/"
     echo "  --platform=PLATFORM   Choose platform: android, flutter, or all (default: all)"
     echo "  --branch=BRANCH       Install from specific branch (default: main)"
+    echo "  --yes, -y             Skip prompts (non-interactive mode, auto-detected in CI)"
+    echo "  --non-interactive     Same as --yes"
     echo "  --help                Show this help message"
     echo ""
     echo "Examples:"
@@ -318,6 +381,8 @@ show_usage() {
     echo "  bash install.sh --platform=android        # Install only Android agents locally"
     echo "  bash install.sh --platform=flutter        # Install only Flutter agents locally"
     echo "  bash install.sh --global --platform=flutter  # Install Flutter agents globally"
+    echo "  bash install.sh --yes                     # Non-interactive installation"
+    echo "  bash install.sh --global --yes            # Non-interactive global installation"
 }
 
 # Show next steps
@@ -464,8 +529,11 @@ main() {
     fi
     print_success "curl detected"
 
-    # Check for Claude Code (optional)
+    # Check for Claude Code (required)
     check_claude_code
+
+    # Check for Flutter SDK (recommended for Flutter agents)
+    check_flutter_sdk
 
     echo ""
 
