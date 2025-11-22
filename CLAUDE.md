@@ -385,6 +385,6 @@ cloudx-sdk-agents/
 
 ## Additional Resources
 
-- **CloudX SDK Repository**: https://github.com/cloudx-io/cloudexchange.android.sdk
+- **CloudX SDK Repository**: https://github.com/cloudx-io/cloudx-android
 - **Issues**: https://github.com/cloudx-io/cloudx-sdk-agents/issues
 - **Claude Code Documentation**: https://claude.ai/code

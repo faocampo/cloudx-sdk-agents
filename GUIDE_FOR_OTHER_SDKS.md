@@ -854,7 +854,7 @@ npx react-native run-android
 ### CloudX Android Implementation (Reference)
 
 - **Agent Repo:** https://github.com/cloudx-io/cloudx-sdk-agents
-- **SDK Repo:** https://github.com/cloudx-io/cloudexchange.android.sdk
+- **SDK Repo:** https://github.com/cloudx-io/cloudx-android
 
 ### Claude Code Documentation
 

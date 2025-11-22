@@ -446,7 +446,7 @@ Don't make any changes yet.
 - **SDK Documentation**: [../../README.md](../../README.md)
 
 ### Getting Help
-- **GitHub Issues**: [cloudx-io/cloudexchange.android.sdk/issues](https://github.com/cloudx-io/cloudexchange.android.sdk/issues)
+- **GitHub Issues**: [cloudx-io/cloudx-android/issues](https://github.com/cloudx-io/cloudx-android/issues)
 - **Email Support**: mobile@cloudx.io
 - **Claude Code Docs**: [claude.ai/code](https://claude.ai/code)
 

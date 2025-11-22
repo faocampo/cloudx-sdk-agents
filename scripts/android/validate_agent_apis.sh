@@ -16,7 +16,7 @@ REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 AGENT_DIR="$REPO_ROOT/.claude/agents/android"
 
 # SDK_DIR can be provided via env var or default to sibling repo
-SDK_DIR="${SDK_DIR:-$(dirname "$REPO_ROOT")/cloudexchange.android.sdk/sdk/src/main/java/io/cloudx/sdk}"
+SDK_DIR="${SDK_DIR:-$(dirname "$REPO_ROOT")/cloudx-android/sdk/src/main/java/io/cloudx/sdk}"
 
 echo "🔍 CloudX Agent Documentation Validation"
 echo "========================================"
@@ -33,7 +33,7 @@ else
     echo "   Running agent doc validation only (syntax & consistency)"
     echo ""
     echo "   To validate against SDK APIs, set SDK_DIR environment variable:"
-    echo "   export SDK_DIR=/path/to/cloudexchange.android.sdk/sdk/src/main/java/io/cloudx/sdk"
+    echo "   export SDK_DIR=/path/to/cloudx-android/sdk/src/main/java/io/cloudx/sdk"
     echo ""
 fi
 

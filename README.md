@@ -79,7 +79,7 @@ claude
 
 ## Resources
 
-- **Android SDK:** https://github.com/cloudx-io/cloudexchange.android.sdk
+- **Android SDK:** https://github.com/cloudx-io/cloudx-android
 - **Flutter SDK:** https://github.com/cloudx-io/cloudx-flutter
 - **Issues:** https://github.com/cloudx-io/cloudx-sdk-agents/issues
 

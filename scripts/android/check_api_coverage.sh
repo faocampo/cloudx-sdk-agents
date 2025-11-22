@@ -16,7 +16,7 @@ REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 AGENT_DIR="$REPO_ROOT/.claude/agents"
 
 # SDK_DIR can be provided via env var or default to sibling repo
-SDK_DIR="${SDK_DIR:-$(dirname "$REPO_ROOT")/cloudexchange.android.sdk/sdk/src/main/java/io/cloudx/sdk}"
+SDK_DIR="${SDK_DIR:-$(dirname "$REPO_ROOT")/cloudx-android/sdk/src/main/java/io/cloudx/sdk}"
 
 echo "🔍 CloudX API Coverage Check"
 echo "================================"
@@ -28,7 +28,7 @@ if [ ! -d "$SDK_DIR" ]; then
     echo ""
     echo "This script requires SDK source code to check API coverage."
     echo "Set SDK_DIR environment variable to point to SDK source:"
-    echo "export SDK_DIR=/path/to/cloudexchange.android.sdk/sdk/src/main/java/io/cloudx/sdk"
+    echo "export SDK_DIR=/path/to/cloudx-android/sdk/src/main/java/io/cloudx/sdk"
     echo ""
     echo "Skipping coverage check."
     exit 0
