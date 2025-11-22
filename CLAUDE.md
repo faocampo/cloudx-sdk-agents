@@ -158,11 +158,58 @@ CloudX.setPrivacy(
 )
 ```
 
+**Native Ads (NEW in v0.8.0)**:
+```kotlin
+// Native Small - for inline feeds
+val nativeSmall = CloudX.createNativeAdSmall(placementName = "native_feed")
+nativeSmall.listener = object : CloudXAdViewListener { /* ... */ }
+nativeSmall.load()
+
+// Native Medium - for larger placements
+val nativeMedium = CloudX.createNativeAdMedium(placementName = "native_article")
+nativeMedium.listener = object : CloudXAdViewListener { /* ... */ }
+nativeMedium.load()
+```
+
+**Advanced Targeting (NEW in v0.8.0)**:
+```kotlin
+// Set hashed user ID (publisher must hash)
+CloudX.setHashedUserId("sha256_hashed_user_id")
+
+// Set user-level key-values
+CloudX.setUserKeyValue("age_group", "25-34")
+CloudX.setUserKeyValue("premium_user", "true")
+
+// Set app-level key-values
+CloudX.setAppKeyValue("game_level", "pro")
+
+// Clear all key-values (e.g., on logout)
+CloudX.clearAllKeyValues()
+```
+
+**Revenue Tracking (NEW in v0.8.0)**:
+```kotlin
+val interstitial = CloudX.createInterstitial(placementName = "interstitial_main")
+interstitial.revenueListener = object : CloudXAdRevenueListener {
+    override fun onAdRevenuePaid(cloudXAd: CloudXAd) {
+        // Track revenue to analytics
+    }
+}
+```
+
+**SDK Deinitialization (NEW in v0.8.0)**:
+```kotlin
+// Clean shutdown on app termination
+CloudX.deinitialize()
+```
+
 **Key API Notes**:
 - `isAdReady` is a **property**, not a method (use `if (ad.isAdReady)`)
 - `show()` method takes **no parameters**
 - Listener callbacks use `CloudXAd` parameter (not just `CloudXError`)
 - Privacy API fields are nullable (null = not set)
+- Native ads use `CloudXAdView` (same as banner/MREC)
+- Revenue listener is optional for fullscreen ads
 
 ## Development Commands
 

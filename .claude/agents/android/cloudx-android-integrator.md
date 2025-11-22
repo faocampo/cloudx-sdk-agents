@@ -98,6 +98,67 @@ if (rewarded.isAdReady) {
 }
 ```
 
+**Native Ads (NEW in v0.8.0):**
+```kotlin
+// Native Small (recommended for inline feeds)
+val nativeSmall = CloudX.createNativeAdSmall(placementName = "native_feed")
+nativeSmall.listener = object : CloudXAdViewListener {
+    override fun onAdLoaded(cloudXAd: CloudXAd) {}
+    override fun onAdLoadFailed(cloudXError: CloudXError) {
+        // TRIGGER FALLBACK HERE
+    }
+    // ... other callbacks
+}
+nativeSmall.load() // MUST call explicitly
+
+// Native Medium (recommended for larger placements)
+val nativeMedium = CloudX.createNativeAdMedium(placementName = "native_article")
+nativeMedium.listener = object : CloudXAdViewListener {
+    override fun onAdLoaded(cloudXAd: CloudXAd) {}
+    override fun onAdLoadFailed(cloudXError: CloudXError) {
+        // TRIGGER FALLBACK HERE
+    }
+    // ... other callbacks
+}
+nativeMedium.load() // MUST call explicitly
+```
+
+**Advanced Targeting (NEW in v0.8.0):**
+```kotlin
+// Set hashed user ID for targeting (publisher must hash)
+CloudX.setHashedUserId("sha256_hashed_user_id")
+
+// Set custom user-level key-value pairs
+CloudX.setUserKeyValue("age_group", "25-34")
+CloudX.setUserKeyValue("premium_user", "true")
+
+// Set custom app-level key-value pairs
+CloudX.setAppKeyValue("game_level", "pro")
+CloudX.setAppKeyValue("subscription", "premium")
+
+// Clear all key-values when user logs out
+CloudX.clearAllKeyValues()
+```
+
+**Revenue Tracking (NEW in v0.8.0):**
+```kotlin
+// Track ad revenue for interstitials and rewarded ads
+val interstitial = CloudX.createInterstitial(placementName = "interstitial_main")
+interstitial.revenueListener = object : CloudXAdRevenueListener {
+    override fun onAdRevenuePaid(cloudXAd: CloudXAd) {
+        // Track revenue to analytics (Firebase, Adjust, etc.)
+        // Revenue data available in cloudXAd object
+    }
+}
+interstitial.load()
+```
+
+**SDK Deinitialization (NEW in v0.8.0):**
+```kotlin
+// Clean shutdown of CloudX SDK (e.g., on app termination)
+CloudX.deinitialize()
+```
+
 ## Implementation Workflow
 
 ### Step 1: Discovery & Mode Detection

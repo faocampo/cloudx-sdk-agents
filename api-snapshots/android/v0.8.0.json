@@ -1,0 +1,337 @@
+{
+  "sdk_version": "0.8.0",
+  "commit_sha": "aa9139c862b24ce0726cb0c0501beb7388987590",
+  "extracted_at": "2025-11-23T00:00:00Z",
+  "api_surface": {
+    "CloudX": {
+      "type": "object",
+      "file": "sdk/src/main/java/io/cloudx/sdk/CloudX.kt",
+      "methods": [
+        {
+          "name": "initialize",
+          "params": ["CloudXInitializationParams", "CloudXInitializationListener?"],
+          "return_type": "Unit"
+        },
+        {
+          "name": "createBanner",
+          "params": ["String"],
+          "return_type": "CloudXAdView"
+        },
+        {
+          "name": "createMREC",
+          "params": ["String"],
+          "return_type": "CloudXAdView"
+        },
+        {
+          "name": "createInterstitial",
+          "params": ["String"],
+          "return_type": "CloudXInterstitialAd"
+        },
+        {
+          "name": "createRewardedInterstitial",
+          "params": ["String"],
+          "return_type": "CloudXRewardedInterstitialAd"
+        },
+        {
+          "name": "createNativeAdSmall",
+          "params": ["String"],
+          "return_type": "CloudXAdView"
+        },
+        {
+          "name": "createNativeAdMedium",
+          "params": ["String"],
+          "return_type": "CloudXAdView"
+        },
+        {
+          "name": "setLoggingEnabled",
+          "params": ["Boolean"],
+          "return_type": "Unit"
+        },
+        {
+          "name": "setMinLogLevel",
+          "params": ["CloudXLogLevel"],
+          "return_type": "Unit"
+        },
+        {
+          "name": "setPrivacy",
+          "params": ["CloudXPrivacy"],
+          "return_type": "Unit"
+        },
+        {
+          "name": "setHashedUserId",
+          "params": ["String"],
+          "return_type": "Unit"
+        },
+        {
+          "name": "setUserKeyValue",
+          "params": ["String", "String"],
+          "return_type": "Unit"
+        },
+        {
+          "name": "setAppKeyValue",
+          "params": ["String", "String"],
+          "return_type": "Unit"
+        },
+        {
+          "name": "clearAllKeyValues",
+          "params": [],
+          "return_type": "Unit"
+        },
+        {
+          "name": "deinitialize",
+          "params": [],
+          "return_type": "Unit"
+        }
+      ]
+    },
+    "CloudXInitializationParams": {
+      "type": "data class",
+      "file": "sdk/src/main/java/io/cloudx/sdk/CloudXInitializationParams.kt",
+      "constructor": [
+        {
+          "name": "appKey",
+          "type": "String"
+        },
+        {
+          "name": "testMode",
+          "type": "Boolean",
+          "default": "false"
+        },
+        {
+          "name": "initServer",
+          "type": "CloudXInitializationServer",
+          "default": "CloudXInitializationServer.Production",
+          "deprecated": true,
+          "deprecation_message": "This parameter is for CloudX internal testing only."
+        }
+      ]
+    },
+    "CloudXInitializationListener": {
+      "type": "interface",
+      "file": "sdk/src/main/java/io/cloudx/sdk/CloudXInitializationListener.kt",
+      "callbacks": [
+        "onInitialized()",
+        "onInitializationFailed(CloudXError)"
+      ]
+    },
+    "CloudXAdView": {
+      "type": "class",
+      "file": "sdk/src/main/java/io/cloudx/sdk/CloudXAdView.kt",
+      "extends": "FrameLayout",
+      "implements": ["CloudXDestroyable"],
+      "properties": [
+        {
+          "name": "listener",
+          "type": "CloudXAdViewListener?"
+        }
+      ],
+      "methods": [
+        {
+          "name": "load",
+          "params": [],
+          "return_type": "Unit"
+        },
+        {
+          "name": "startAutoRefresh",
+          "params": [],
+          "return_type": "Unit"
+        },
+        {
+          "name": "stopAutoRefresh",
+          "params": [],
+          "return_type": "Unit"
+        },
+        {
+          "name": "destroy",
+          "params": [],
+          "return_type": "Unit"
+        }
+      ]
+    },
+    "CloudXAdViewListener": {
+      "type": "interface",
+      "file": "sdk/src/main/java/io/cloudx/sdk/CloudXAdViewListener.kt",
+      "extends": "CloudXAdListener",
+      "callbacks": [
+        "onAdExpanded(CloudXAd)",
+        "onAdCollapsed(CloudXAd)",
+        "[inherited] onAdLoaded(CloudXAd)",
+        "[inherited] onAdLoadFailed(CloudXError)",
+        "[inherited] onAdDisplayed(CloudXAd)",
+        "[inherited] onAdDisplayFailed(CloudXError)",
+        "[inherited] onAdHidden(CloudXAd)",
+        "[inherited] onAdClicked(CloudXAd)"
+      ]
+    },
+    "CloudXInterstitialAd": {
+      "type": "interface",
+      "file": "sdk/src/main/java/io/cloudx/sdk/CloudXInterstitialAd.kt",
+      "extends": "CloudXFullscreenAd<CloudXInterstitialListener>",
+      "properties": [
+        "[inherited] listener: CloudXInterstitialListener?",
+        "[inherited] revenueListener: CloudXAdRevenueListener?",
+        "[inherited] isAdReady: Boolean"
+      ],
+      "methods": [
+        "[inherited] load()",
+        "[inherited] show()",
+        "[inherited] destroy()"
+      ]
+    },
+    "CloudXInterstitialListener": {
+      "type": "interface",
+      "file": "sdk/src/main/java/io/cloudx/sdk/CloudXInterstitialListener.kt",
+      "extends": "CloudXAdListener",
+      "callbacks": [
+        "[inherited] onAdLoaded(CloudXAd)",
+        "[inherited] onAdLoadFailed(CloudXError)",
+        "[inherited] onAdDisplayed(CloudXAd)",
+        "[inherited] onAdDisplayFailed(CloudXError)",
+        "[inherited] onAdHidden(CloudXAd)",
+        "[inherited] onAdClicked(CloudXAd)"
+      ]
+    },
+    "CloudXRewardedInterstitialAd": {
+      "type": "interface",
+      "file": "sdk/src/main/java/io/cloudx/sdk/CloudXRewardedInterstitialAd.kt",
+      "extends": "CloudXFullscreenAd<CloudXRewardedInterstitialListener>",
+      "properties": [
+        "[inherited] listener: CloudXRewardedInterstitialListener?",
+        "[inherited] revenueListener: CloudXAdRevenueListener?",
+        "[inherited] isAdReady: Boolean"
+      ],
+      "methods": [
+        "[inherited] load()",
+        "[inherited] show()",
+        "[inherited] destroy()"
+      ]
+    },
+    "CloudXRewardedInterstitialListener": {
+      "type": "interface",
+      "file": "sdk/src/main/java/io/cloudx/sdk/CloudXRewardedInterstitialListener.kt",
+      "extends": "CloudXAdListener",
+      "callbacks": [
+        "onUserRewarded(CloudXAd)",
+        "[inherited] onAdLoaded(CloudXAd)",
+        "[inherited] onAdLoadFailed(CloudXError)",
+        "[inherited] onAdDisplayed(CloudXAd)",
+        "[inherited] onAdDisplayFailed(CloudXError)",
+        "[inherited] onAdHidden(CloudXAd)",
+        "[inherited] onAdClicked(CloudXAd)"
+      ]
+    },
+    "CloudXAdListener": {
+      "type": "interface",
+      "file": "sdk/src/main/java/io/cloudx/sdk/CloudXAdListener.kt",
+      "callbacks": [
+        "onAdLoaded(CloudXAd)",
+        "onAdLoadFailed(CloudXError)",
+        "onAdDisplayed(CloudXAd)",
+        "onAdDisplayFailed(CloudXError)",
+        "onAdHidden(CloudXAd)",
+        "onAdClicked(CloudXAd)"
+      ]
+    },
+    "CloudXFullscreenAd": {
+      "type": "interface",
+      "file": "sdk/src/main/java/io/cloudx/sdk/CloudXFullscreenAd.kt",
+      "generic_params": ["T: CloudXAdListener"],
+      "extends": "CloudXDestroyable",
+      "properties": [
+        {
+          "name": "listener",
+          "type": "T?"
+        },
+        {
+          "name": "revenueListener",
+          "type": "CloudXAdRevenueListener?"
+        },
+        {
+          "name": "isAdReady",
+          "type": "Boolean"
+        }
+      ],
+      "methods": [
+        {
+          "name": "load",
+          "params": [],
+          "return_type": "Unit"
+        },
+        {
+          "name": "show",
+          "params": [],
+          "return_type": "Unit"
+        }
+      ]
+    },
+    "CloudXPrivacy": {
+      "type": "data class",
+      "file": "sdk/src/main/java/io/cloudx/sdk/CloudXPrivacy.kt",
+      "constructor": [
+        {
+          "name": "isUserConsent",
+          "type": "Boolean?",
+          "default": "null"
+        },
+        {
+          "name": "isAgeRestrictedUser",
+          "type": "Boolean?",
+          "default": "null"
+        }
+      ]
+    },
+    "CloudXAd": {
+      "type": "data class",
+      "file": "sdk/src/main/java/io/cloudx/sdk/CloudXAd.kt",
+      "description": "Ad metadata returned in callbacks"
+    },
+    "CloudXError": {
+      "type": "data class",
+      "file": "sdk/src/main/java/io/cloudx/sdk/CloudXError.kt",
+      "description": "Error information returned in failure callbacks"
+    },
+    "CloudXLogLevel": {
+      "type": "enum",
+      "file": "sdk/src/main/java/io/cloudx/sdk/CloudXLogLevel.kt",
+      "values": ["VERBOSE", "DEBUG", "INFO", "WARN", "ERROR"]
+    },
+    "CloudXDestroyable": {
+      "type": "interface",
+      "file": "sdk/src/main/java/io/cloudx/sdk/CloudXDestroyable.kt",
+      "methods": [
+        {
+          "name": "destroy",
+          "params": [],
+          "return_type": "Unit"
+        }
+      ]
+    },
+    "CloudXAdRevenueListener": {
+      "type": "interface",
+      "file": "sdk/src/main/java/io/cloudx/sdk/CloudXRevenueListener.kt",
+      "description": "Revenue tracking listener (NEW in v0.8.0)",
+      "callbacks": [
+        "onAdRevenuePaid(CloudXAd)"
+      ]
+    }
+  },
+  "api_changes_from_previous": {
+    "previous_version": "0.6.1",
+    "new_apis": [
+      "CloudX.createNativeAdSmall(String): CloudXAdView",
+      "CloudX.createNativeAdMedium(String): CloudXAdView",
+      "CloudX.setHashedUserId(String)",
+      "CloudX.setUserKeyValue(String, String)",
+      "CloudX.setAppKeyValue(String, String)",
+      "CloudX.clearAllKeyValues()",
+      "CloudX.deinitialize()",
+      "CloudXFullscreenAd.revenueListener: CloudXAdRevenueListener?",
+      "CloudXAdRevenueListener interface"
+    ],
+    "removed_apis": [],
+    "signature_changes": [],
+    "deprecations": [
+      "CloudXInitializationParams.initServer (internal testing only)"
+    ]
+  }
+}
