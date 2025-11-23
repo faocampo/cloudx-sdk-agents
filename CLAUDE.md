@@ -7,7 +7,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 This repository contains specialized Claude Code agents for automating CloudX SDK integration across multiple platforms (Android, Flutter, and future iOS). The agents help app publishers integrate CloudX SDK as a primary ad mediation layer with proper fallback to AdMob/AppLovin, reducing integration time from 4-6 hours to ~20 minutes.
 
 **Supported Platforms:**
-- **Android** (v0.6.1) - 4 agents - Production ready
+- **Android** (v0.8.0) - 4 agents - Production ready
 - **Flutter** (v0.1.2) - 4 agents - Production ready
 - **iOS** - Coming soon
 
@@ -96,7 +96,7 @@ Secondary Mediation (Fallback)
 
 ## Platform-Specific Integration Details
 
-### Android CloudX SDK API Reference (v0.6.1)
+### Android CloudX SDK API Reference (v0.8.0)
 
 **Critical Implementation Details**:
 - CloudX SDK **must** be initialized before attempting ad loads
@@ -158,11 +158,58 @@ CloudX.setPrivacy(
 )
 ```
 
+**Native Ads (NEW in v0.8.0)**:
+```kotlin
+// Native Small - for inline feeds
+val nativeSmall = CloudX.createNativeAdSmall(placementName = "native_feed")
+nativeSmall.listener = object : CloudXAdViewListener { /* ... */ }
+nativeSmall.load()
+
+// Native Medium - for larger placements
+val nativeMedium = CloudX.createNativeAdMedium(placementName = "native_article")
+nativeMedium.listener = object : CloudXAdViewListener { /* ... */ }
+nativeMedium.load()
+```
+
+**Advanced Targeting (NEW in v0.8.0)**:
+```kotlin
+// Set hashed user ID (publisher must hash)
+CloudX.setHashedUserId("sha256_hashed_user_id")
+
+// Set user-level key-values
+CloudX.setUserKeyValue("age_group", "25-34")
+CloudX.setUserKeyValue("premium_user", "true")
+
+// Set app-level key-values
+CloudX.setAppKeyValue("game_level", "pro")
+
+// Clear all key-values (e.g., on logout)
+CloudX.clearAllKeyValues()
+```
+
+**Revenue Tracking (NEW in v0.8.0)**:
+```kotlin
+val interstitial = CloudX.createInterstitial(placementName = "interstitial_main")
+interstitial.revenueListener = object : CloudXAdRevenueListener {
+    override fun onAdRevenuePaid(cloudXAd: CloudXAd) {
+        // Track revenue to analytics
+    }
+}
+```
+
+**SDK Deinitialization (NEW in v0.8.0)**:
+```kotlin
+// Clean shutdown on app termination
+CloudX.deinitialize()
+```
+
 **Key API Notes**:
 - `isAdReady` is a **property**, not a method (use `if (ad.isAdReady)`)
 - `show()` method takes **no parameters**
 - Listener callbacks use `CloudXAd` parameter (not just `CloudXError`)
 - Privacy API fields are nullable (null = not set)
+- Native ads use `CloudXAdView` (same as banner/MREC)
+- Revenue listener is optional for fullscreen ads
 
 ## Development Commands
 
@@ -338,6 +385,6 @@ cloudx-sdk-agents/
 
 ## Additional Resources
 
-- **CloudX SDK Repository**: https://github.com/cloudx-io/cloudexchange.android.sdk
+- **CloudX SDK Repository**: https://github.com/cloudx-io/cloudx-android
 - **Issues**: https://github.com/cloudx-io/cloudx-sdk-agents/issues
 - **Claude Code Documentation**: https://claude.ai/code

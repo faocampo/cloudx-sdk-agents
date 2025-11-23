@@ -98,6 +98,67 @@ if (rewarded.isAdReady) {
 }
 ```
 
+**Native Ads (NEW in v0.8.0):**
+```kotlin
+// Native Small (recommended for inline feeds)
+val nativeSmall = CloudX.createNativeAdSmall(placementName = "native_feed")
+nativeSmall.listener = object : CloudXAdViewListener {
+    override fun onAdLoaded(cloudXAd: CloudXAd) {}
+    override fun onAdLoadFailed(cloudXError: CloudXError) {
+        // TRIGGER FALLBACK HERE
+    }
+    // ... other callbacks
+}
+nativeSmall.load() // MUST call explicitly
+
+// Native Medium (recommended for larger placements)
+val nativeMedium = CloudX.createNativeAdMedium(placementName = "native_article")
+nativeMedium.listener = object : CloudXAdViewListener {
+    override fun onAdLoaded(cloudXAd: CloudXAd) {}
+    override fun onAdLoadFailed(cloudXError: CloudXError) {
+        // TRIGGER FALLBACK HERE
+    }
+    // ... other callbacks
+}
+nativeMedium.load() // MUST call explicitly
+```
+
+**Advanced Targeting (NEW in v0.8.0):**
+```kotlin
+// Set hashed user ID for targeting (publisher must hash)
+CloudX.setHashedUserId("sha256_hashed_user_id")
+
+// Set custom user-level key-value pairs
+CloudX.setUserKeyValue("age_group", "25-34")
+CloudX.setUserKeyValue("premium_user", "true")
+
+// Set custom app-level key-value pairs
+CloudX.setAppKeyValue("game_level", "pro")
+CloudX.setAppKeyValue("subscription", "premium")
+
+// Clear all key-values when user logs out
+CloudX.clearAllKeyValues()
+```
+
+**Revenue Tracking (NEW in v0.8.0):**
+```kotlin
+// Track ad revenue for interstitials and rewarded ads
+val interstitial = CloudX.createInterstitial(placementName = "interstitial_main")
+interstitial.revenueListener = object : CloudXAdRevenueListener {
+    override fun onAdRevenuePaid(cloudXAd: CloudXAd) {
+        // Track revenue to analytics (Firebase, Adjust, etc.)
+        // Revenue data available in cloudXAd object
+    }
+}
+interstitial.load()
+```
+
+**SDK Deinitialization (NEW in v0.8.0):**
+```kotlin
+// Clean shutdown of CloudX SDK (e.g., on app termination)
+CloudX.deinitialize()
+```
+
 ## Implementation Workflow
 
 ### Step 1: Discovery & Mode Detection
@@ -171,8 +232,8 @@ dependencyResolutionManagement {
 Add to app-level `build.gradle.kts`:
 ```kotlin
 dependencies {
-    implementation("io.cloudx:sdk:0.6.1")
-    implementation("io.cloudx:adapter-cloudx:0.6.1")
+    implementation("io.cloudx:sdk:0.8.0")
+    implementation("io.cloudx:adapter-cloudx:0.8.0")
 
     // In first-look mode: KEEP existing AdMob/AppLovin dependencies
     // In CloudX-only mode: No other ad SDK dependencies needed
@@ -447,8 +508,8 @@ When integration is complete, provide a structured summary following this templa
 
 ### ✅ Integration Complete
 
-**[CloudX-Only Mode]:** CloudX SDK v0.6.1 integrated (standalone)
-**[First-Look Mode]:** CloudX SDK v0.6.1 first look integrated with fallback to [AdMob/AppLovin]
+**[CloudX-Only Mode]:** CloudX SDK v0.8.0 integrated (standalone)
+**[First-Look Mode]:** CloudX SDK v0.8.0 first look integrated with fallback to [AdMob/AppLovin]
 
 ### 📝 What Was Done
 
@@ -463,7 +524,7 @@ When integration is complete, provide a structured summary following this templa
 
 **2. Dependencies Added**
 - File: `app/build.gradle.kts`
-- Added CloudX SDK v0.6.1 and adapter
+- Added CloudX SDK v0.8.0 and adapter
 - [CloudX-Only Mode]: Standalone dependencies
 - [First-Look Mode]: Preserved existing ad SDK dependencies
 
@@ -617,7 +678,7 @@ Before reporting success to publisher, verify:
 **Code Quality (Universal):**
 - [ ] All code changes compile successfully
 - [ ] Maven repository configured in settings.gradle.kts (GitHub Packages URL)
-- [ ] CloudX SDK dependencies added correctly with version 0.6.1
+- [ ] CloudX SDK dependencies added correctly with version 0.8.0
 - [ ] Initialization code in Application class
 - [ ] All `.load()` calls present (CloudX doesn't auto-load)
 <!-- VALIDATION:IGNORE:START -->
