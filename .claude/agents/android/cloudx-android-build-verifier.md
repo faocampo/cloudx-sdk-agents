@@ -1,13 +1,13 @@
 ---
 name: cloudx-android-build-verifier
-description: Runs Gradle builds to verify CloudX Android SDK v0.8.0 integration compiles
+description: Runs Gradle builds to verify CloudX Android SDK integration compiles
 tools: Read, Bash, Grep
 model: sonnet
 ---
 
 # CloudX Android Build Verifier
 
-**SDK Version:** 0.8.0
+**SDK Version:** 0.8.0 | **Last Updated:** 2025-11-24
 
 ## Mission
 Verify CloudX SDK integration compiles successfully.
@@ -60,7 +60,8 @@ All imports should resolve:
 - `io.cloudx.sdk.CloudXAdViewListener`
 - `io.cloudx.sdk.CloudXInterstitialListener`
 - `io.cloudx.sdk.CloudXRewardedInterstitialListener`
-- `io.cloudx.sdk.CloudXAdRevenueListener`
+- `io.cloudx.sdk.CloudXAdRevenueListener` (new in 0.8.0)
+- `io.cloudx.sdk.CloudXDestroyable`
 
 **Method signature errors:**
 ```bash
@@ -68,7 +69,7 @@ All imports should resolve:
 grep -r "CloudX\." --include="*.kt" --include="*.java"
 ```
 
-Verify correct signatures:
+Verify correct signatures (v0.8.0):
 - `CloudX.initialize(CloudXInitializationParams, CloudXInitializationListener?)`
 - `CloudX.createBanner(String): CloudXAdView`
 - `CloudX.createMREC(String): CloudXAdView`
@@ -98,9 +99,10 @@ Should only appear with `@Deprecated` warning.
 Build must:
 - Complete without errors
 - Zero compilation errors
-- Zero deprecation warnings for CloudX APIs (except CloudXInitializationServer parameter)
+- Zero unresolved references
 - All CloudX imports resolve
 - All method signatures match v0.8.0
+- Zero deprecation warnings for CloudX APIs (except CloudXInitializationServer parameter)
 
 ### 5. Manifest Verification
 
@@ -133,6 +135,8 @@ Verify:
 implementation("io.cloudx:cloudx-android-sdk:0.8.0")
 ```
 
+Then sync Gradle.
+
 ### Error: "Type mismatch" in listener
 
 **Fix:** Implement all required methods:
@@ -155,10 +159,19 @@ object : CloudXAdViewListener {
 
 ### Error: ProGuard/R8 obfuscation issues
 
-**Fix:** No special rules needed for v0.8.0. If issues persist:
+**Fix:** No special rules needed for v0.8.0. SDK handles consumer proguard rules automatically. If issues persist:
 ```proguard
 -keep class io.cloudx.sdk.** { *; }
 ```
+
+### Error: "Duplicate class" conflicts
+
+**Fix:** Check for multiple versions of CloudX SDK in dependencies:
+```bash
+./gradlew app:dependencies | grep cloudx
+```
+
+Ensure only one version is included.
 
 ## Success Criteria
 
@@ -169,6 +182,7 @@ object : CloudXAdViewListener {
 - No deprecated CloudX APIs used (except allowed CloudXInitializationServer)
 - Manifest properly configured
 - ProGuard/R8 builds work
+- No duplicate dependencies
 
 ## Build Report Template
 
@@ -178,6 +192,7 @@ After verification:
 - Gradle version: [detected]
 - Build result: [Success / Failed]
 - CloudX SDK version: [detected]
+- Build time: [duration]
 
 ### Compilation
 - Errors: [count]

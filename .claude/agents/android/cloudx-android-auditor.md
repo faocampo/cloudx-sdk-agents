@@ -1,12 +1,12 @@
 ---
 name: cloudx-android-auditor
-description: Validates CloudX Android SDK v0.8.0 integration and fallback logic
+description: Validates CloudX Android SDK integration and fallback logic
 tools: Read, Grep, Glob
 model: sonnet
 ---
 
 # CloudX Android Audit Agent
-**SDK Version:** 0.8.0
+**SDK Version:** 0.8.0 | **Last Updated:** 2025-11-24
 
 Audit CloudX implementation: correct API usage, CloudX as primary, fallback intact.
 
@@ -126,10 +126,44 @@ Verify all APIs used correctly:
 | `destroy()` | In onDestroy() | Never called |
 | `startAutoRefresh()` | For banner/MREC/native | For interstitial/rewarded |
 
+**Complete API List (v0.8.0):**
+
+Core SDK:
+- `CloudX.initialize(CloudXInitializationParams, CloudXInitializationListener?)`
+- `CloudX.createBanner(String): CloudXAdView`
+- `CloudX.createMREC(String): CloudXAdView`
+- `CloudX.createInterstitial(String): CloudXInterstitialAd`
+- `CloudX.createRewardedInterstitial(String): CloudXRewardedInterstitialAd`
+- `CloudX.createNativeAdSmall(String): CloudXAdView`
+- `CloudX.createNativeAdMedium(String): CloudXAdView`
+- `CloudX.setPrivacy(CloudXPrivacy)`
+- `CloudX.setLoggingEnabled(Boolean)`
+- `CloudX.setMinLogLevel(CloudXLogLevel)`
+- `CloudX.setHashedUserId(String)`
+- `CloudX.setUserKeyValue(String, String)`
+- `CloudX.setAppKeyValue(String, String)`
+- `CloudX.clearAllKeyValues()`
+- `CloudX.deinitialize()`
+
+Ad Views:
+- `CloudXAdView.load()`
+- `CloudXAdView.startAutoRefresh()`
+- `CloudXAdView.stopAutoRefresh()`
+- `CloudXAdView.destroy()`
+- `CloudXAdView.listener: CloudXAdViewListener?`
+
+Fullscreen Ads:
+- `CloudXInterstitialAd/CloudXRewardedInterstitialAd.load()`
+- `CloudXInterstitialAd/CloudXRewardedInterstitialAd.show()`
+- `CloudXInterstitialAd/CloudXRewardedInterstitialAd.isAdReady: Boolean`
+- `CloudXInterstitialAd/CloudXRewardedInterstitialAd.destroy()`
+- `CloudXInterstitialAd/CloudXRewardedInterstitialAd.listener`
+- `CloudXInterstitialAd/CloudXRewardedInterstitialAd.revenueListener`
+
 **Verify no deprecated APIs:**
 ```bash
-# Search for any CloudXInitializationServer usage (deprecated)
-grep -r "CloudXInitializationServer" --include="*.kt" --include="*.java"
+# Search for CloudXInitializationServer usage (deprecated)
+grep -r "CloudXInitializationServer\\.Production\\|CloudXInitializationServer\\.Staging" --include="*.kt" --include="*.java"
 ```
 
 ### 6. Fallback Verification
@@ -152,9 +186,7 @@ cloudxAd.listener = object : CloudXAdListener {
 grep -A3 "onAdLoadFailed" --include="*.kt" --include="*.java"
 ```
 
-### 7. Breaking Changes (from previous versions)
-
-If migrating from older SDK version, check:
+### 7. Breaking Changes
 
 **v0.7.x to v0.8.0:**
 - No breaking changes in public APIs
@@ -167,7 +199,7 @@ If migrating from older SDK version, check:
 **Verify:**
 ```bash
 # Check SDK version in build.gradle
-grep "io.cloudx:cloudx-android-sdk" build.gradle
+grep "io.cloudx:cloudx-android-sdk" build.gradle app/build.gradle
 ```
 
 ## Audit Workflow
@@ -209,9 +241,10 @@ grep -A5 "onAdLoadFailed" --include="*.kt" --include="*.java"
 - Missing destroy() calls
 - No fallback in onAdLoadFailed()
 - show() without checking isAdReady
-- Hard-coded testMode = true
+- Hard-coded testMode = true in production
 - Missing listener implementations
-- Using deprecated CloudXInitializationServer parameter
+- Using deprecated CloudXInitializationServer parameter explicitly
+- Listener set after load() call
 
 ## Audit Report Template
 
@@ -220,7 +253,7 @@ After audit, provide:
 ### Summary
 - CloudX SDK version: [detected version]
 - Integration status: [Correct / Needs fixes]
-- Fallback status: [Present / Missing]
+- Fallback status: [Present / Missing / Not needed]
 
 ### Issues Found
 1. [Issue description]
@@ -233,5 +266,6 @@ After audit, provide:
 
 ### Compliance
 - GDPR/CCPA: [Compliant / Non-compliant]
-- IAB TCF/GPP: [Present / Not detected]
+- IAB TCF/GPP: [Present / Not detected / N/A]
 - Privacy policy: [Mentions CloudX / Missing]
+- Fallback privacy: [Configured / Not configured / N/A]
