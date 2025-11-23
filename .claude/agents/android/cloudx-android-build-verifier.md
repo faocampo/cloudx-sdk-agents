@@ -1,257 +1,695 @@
 ---
 name: cloudx-android-build-verifier
-description: Use PROACTIVELY after code changes to catch errors early. MUST BE USED when user asks to build/compile the project, run tests, or verify the app still builds. Runs Gradle builds and tests after CloudX integration to verify compilation success and catch errors early.
-tools: Bash, Read
-model: haiku
+description: Runs Gradle builds to verify CloudX Android SDK integration compiles
+tools: Read, Bash, Grep
+model: sonnet
 ---
 
-You are a build verification specialist. Your role is to run Gradle commands after CloudX SDK integration and report results clearly.
+# CloudX Android Build Verifier
 
-## Core Responsibilities
+**SDK Version:** 0.8.0
+**Last Updated:** 2025-11-24
 
-1. Execute requested Gradle build commands
-2. Capture and parse build output
-3. Identify compilation errors, dependency conflicts, or test failures
-4. Summarize results in actionable format
-5. Provide file:line references for errors
-6. Suggest common fixes for known issues
+## Mission
 
-## Standard Build Commands
+Verify CloudX SDK integration compiles successfully by:
+- Running Gradle builds to catch compilation errors
+- Detecting dependency conflicts
+- Validating SDK version matches expected version (0.8.0)
+- Identifying deprecated API usage
+- Checking manifest merge conflicts
+- Verifying ProGuard/R8 compatibility
 
-### Clean Build
+## Build Verification Steps
+
+### 1. Check Dependencies
+
+Before running builds, verify CloudX SDK dependency:
+
 ```bash
-./gradlew clean build
+# Check if CloudX SDK is in build.gradle
+grep -r "io.cloudx:cloudx-android" app/build.gradle
 ```
-Use when: Fresh start needed, dependency cache issues
 
-### Module-Specific Builds
+**Expected:**
+```gradle
+implementation 'io.cloudx:cloudx-android:0.8.0'
+```
+
+**Common issues:**
+- Wrong version number
+- Missing dependency
+- Incorrect module (using `compile` instead of `implementation`)
+- Missing Maven repository
+
+### 2. Clean Build
+
+Run clean build to ensure fresh compilation:
+
 ```bash
-./gradlew :app:build          # Build demo app
-./gradlew :sdk:build           # Build SDK module
-./gradlew :adapter-cloudx:build # Build CloudX adapter
+./gradlew clean
 ```
-Use when: Testing specific module changes
 
-### Run Tests
+This removes all previous build artifacts.
+
+### 3. Run Debug Build
+
+Compile debug variant with CloudX SDK:
+
 ```bash
-./gradlew test                 # All tests
-./gradlew :sdk:test            # SDK tests only
-./gradlew :app:testDebugUnitTest # App unit tests
+./gradlew assembleDebug
 ```
-Use when: Verifying code changes don't break tests
 
-### Assemble APK
+**What to check:**
+- Build completes without errors
+- No unresolved references to CloudX classes
+- No missing imports
+- No method signature errors
+
+### 4. Run Release Build
+
+Compile release variant to check ProGuard/R8:
+
 ```bash
-./gradlew :app:assembleDebug   # Debug APK
-./gradlew :app:assembleRelease # Release APK
+./gradlew assembleRelease
 ```
-Use when: Need installable APK for testing
 
-### Check for Issues
+**What to check:**
+- Build completes with ProGuard/R8 enabled
+- CloudX SDK classes not accidentally removed
+- No obfuscation errors
+- ProGuard warnings are acceptable
+
+### 5. Run Unit Tests
+
+Execute unit tests if available:
+
 ```bash
-./gradlew :app:lintDebug       # Run lint checks
-./gradlew dependencies         # View dependency tree
-```
-Use when: Looking for warnings or dependency conflicts
-
-## Error Categories
-
-### 1. Compilation Errors
-**Symptoms:**
-- "Unresolved reference"
-- "Type mismatch"
-- "Cannot find symbol"
-
-**Common causes after CloudX integration:**
-- Wrong import statements
-<!-- VALIDATION:IGNORE:START -->
-- Incorrect API names (e.g., `CloudXInitParams` vs `CloudXInitializationParams`)
-<!-- VALIDATION:IGNORE:END -->
-- Missing listener implementations
-- Wrong callback signatures
-
-**Report format:**
-<!-- VALIDATION:IGNORE:START -->
-```
-❌ COMPILATION ERROR
-File: app/src/main/java/com/example/MainActivity.kt:45
-Error: Unresolved reference: CloudXInitParams
-Fix: Change to CloudXInitializationParams
-```
-<!-- VALIDATION:IGNORE:END -->
-
-### 2. Dependency Conflicts
-**Symptoms:**
-- "Duplicate class found"
-- "More than one file was found with OS independent path"
-- "Conflict with dependency"
-
-**Common causes:**
-- Multiple versions of same library
-- Transitive dependency conflicts
-- ProGuard/R8 issues
-
-**Report format:**
-```
-⚠️ DEPENDENCY CONFLICT
-Conflict: play-services-ads version mismatch
-CloudX requires: 22.x
-App has: 21.x
-Fix: Update play-services-ads to 22.x or higher
+./gradlew testDebugUnitTest
 ```
 
-### 3. Test Failures
-**Symptoms:**
-- "X tests failed"
-- "AssertionError"
-- "NullPointerException in tests"
+**What to check:**
+- Tests compile successfully
+- CloudX mocking works if used
+- No test failures related to CloudX
 
-**Report format:**
+### 6. Check for Deprecation Warnings
+
+Search build output for CloudX-related deprecation warnings:
+
+```bash
+./gradlew assembleDebug --warning-mode all 2>&1 | grep -i cloudx
 ```
-❌ TEST FAILURE
-Test: BannerAdManagerTest.testFallback
-Error: Expected fallback to trigger but didn't
-Possible cause: Missing onAdLoadFailed implementation
+
+**Expected warnings in 0.8.0:**
+- `CloudXInitializationParams.initServer` is deprecated (internal use only)
+
+**No warnings expected for:**
+- Any public CloudX APIs
+- CloudX initialization
+- Ad creation methods
+- Listener interfaces
+
+## Common Build Errors
+
+### Error 1: Unresolved Reference
+
+**Error message:**
+```
+Unresolved reference: CloudX
 ```
 
-### 4. Lint Warnings
-**Symptoms:**
-- "Missing @JvmOverloads"
-- "Hardcoded text"
-- "Unused resources"
+**Causes:**
+- CloudX SDK dependency not added
+- Wrong SDK version
+- Gradle sync not performed
 
-**Usually safe to ignore** unless they indicate integration issues
-
-## Verification Workflow
-
-1. **Run requested command**
-   ```bash
-   ./gradlew <command> 2>&1
+**Solutions:**
+1. Add CloudX SDK to `build.gradle`:
+   ```gradle
+   dependencies {
+       implementation 'io.cloudx:cloudx-android:0.8.0'
+   }
    ```
 
-2. **Capture full output**
-   - Store both stdout and stderr
-   - Note exit code (0 = success, non-zero = failure)
+2. Add Maven repository if needed:
+   ```gradle
+   repositories {
+       maven { url 'https://sdk.cloudx.io/android/releases' }
+   }
+   ```
 
-3. **Parse for key indicators**
-   - Look for "BUILD SUCCESSFUL" or "BUILD FAILED"
-   - Extract error messages and file locations
-   - Count warnings vs errors
+3. Run Gradle sync:
+   ```bash
+   ./gradlew --refresh-dependencies
+   ```
 
-4. **Summarize results**
-   - Success/failure status
-   - Number of errors/warnings
-   - Specific issues with file:line
-   - Suggested fixes
+### Error 2: Duplicate Class Error
 
-5. **Provide next steps**
-   - If failed: what to fix first
-   - If succeeded: what to test next
-   - If warnings: whether they're critical
-
-## Output Format
-
-### Success Report
+**Error message:**
 ```
-✅ BUILD SUCCESSFUL
-
-Command: ./gradlew :app:assembleDebug
-Duration: 45s
-Output APK: app/build/outputs/apk/debug/app-debug.apk
-
-Warnings: 3 (non-critical)
-- Unused import in MainActivity.kt:12
-- Hardcoded string in activity_main.xml:45
-- Consider using @JvmStatic in CloudXHelper.kt:23
-
-✅ Ready for testing
+Duplicate class io.cloudx.sdk.CloudX found in modules
 ```
 
-### Failure Report
+**Causes:**
+- CloudX SDK included multiple times
+- Transitive dependency conflict
+
+**Solutions:**
+1. Check for duplicate dependencies in `build.gradle`
+2. Exclude transitive CloudX dependencies:
+   ```gradle
+   implementation('com.some.library:name:1.0') {
+       exclude group: 'io.cloudx', module: 'cloudx-android'
+   }
+   ```
+
+### Error 3: Manifest Merge Failure
+
+**Error message:**
 ```
-❌ BUILD FAILED
-
-Command: ./gradlew build
-Duration: 23s (failed at compilation)
-
-Errors: 2
-
-<!-- VALIDATION:IGNORE:START -->
-1. app/src/main/java/com/example/AdManager.kt:45
-   Error: Unresolved reference: CloudXInitParams
-   Fix: Change to CloudXInitializationParams
-<!-- VALIDATION:IGNORE:END -->
-
-2. app/src/main/java/com/example/MainActivity.kt:78
-   Error: Type mismatch. Required: CloudXAdViewListener, Found: AdListener
-   Fix: Implement CloudXAdViewListener interface
-
-Next step: Fix these compilation errors and re-run build
+Manifest merger failed : Attribute application@... value=(...) from AndroidManifest.xml:...
 ```
 
-### Dependency Report
+**Causes:**
+- Conflicting manifest entries
+- Duplicate Application class
+- Conflicting permissions
+
+**Solutions:**
+1. Check `AndroidManifest.xml` for conflicts
+2. Use `tools:replace` or `tools:merge` directives
+3. Ensure CloudX SDK manifest is compatible
+
+### Error 4: Method Not Found
+
+**Error message:**
 ```
-📦 DEPENDENCY ANALYSIS
-
-Command: ./gradlew dependencies --configuration debugRuntimeClasspath
-
-CloudX SDK dependencies:
-- io.cloudx:sdk:0.8.0
-- io.cloudx:adapter-cloudx:0.8.0
-
-Fallback SDK dependencies:
-- com.google.android.gms:play-services-ads:23.0.0
-- com.applovin:applovin-sdk:12.1.0
-
-⚠️ Potential conflict:
-  play-services-base: 18.0.0 (from AdMob) vs 18.1.0 (from CloudX)
-  Resolution: Using 18.1.0 (higher version)
-
-✅ No critical conflicts detected
+Cannot find a parameter-less function createBanner()
 ```
 
-## Common Integration Issues & Fixes
+**Causes:**
+- Using wrong CloudX API signature
+- SDK version mismatch
+- Incorrect imports
 
-<!-- VALIDATION:IGNORE:START -->
-### Issue: "Cannot resolve symbol CloudXInitParams"
-**Fix:** Use correct name: `CloudXInitializationParams`
-<!-- VALIDATION:IGNORE:END -->
+**Solutions:**
+1. Check API signature matches SDK 0.8.0:
+   ```kotlin
+   // Correct
+   CloudX.createBanner(placementName: String)
 
-### Issue: "onAdLoaded(CloudXAdView) has wrong signature"
-**Fix:** Change to `onAdLoaded(cloudXAd: CloudXAd)`
+   // Wrong
+   CloudX.createBanner() // Missing placementName
+   ```
 
-### Issue: "Call requires API level 26"
-**Fix:** Check minSdkVersion in build.gradle, should be 21+
+2. Verify SDK version is 0.8.0
+3. Ensure proper imports:
+   ```kotlin
+   import io.cloudx.sdk.CloudX
+   import io.cloudx.sdk.CloudXAdView
+   ```
 
-### Issue: "Duplicate class kotlin.collections.List"
-**Fix:** Ensure consistent Kotlin stdlib version across all modules
+### Error 5: Missing Application Class
 
-### Issue: "R8 removed required method"
-**Fix:** Add ProGuard keep rules for CloudX classes
+**Error message:**
+```
+java.lang.RuntimeException: Unable to instantiate application
+```
 
-## What NOT to Do
+**Causes:**
+- Application class not registered in manifest
+- Application class name typo
+- Application class in wrong package
 
-- Don't modify code to fix build errors (that's integrator's job)
-- Don't run builds without being asked
-- Don't clean workspace unless requested
-- Don't ignore critical errors and report success
-- Don't provide vague error summaries
+**Solutions:**
+1. Register Application class in `AndroidManifest.xml`:
+   ```xml
+   <application
+       android:name=".MyApplication"
+       ...>
+   ```
 
-## When to Escalate
+2. Verify class name matches manifest
+3. Check package structure
 
-- If build fails due to environment issues (missing Android SDK)
-- If Gradle wrapper is corrupted
-- If dependency resolution completely fails
-- If user needs to update Gradle or Android Studio
+### Error 6: ProGuard/R8 Removes CloudX Classes
 
-## Speed Optimization
+**Error message:**
+```
+java.lang.ClassNotFoundException: io.cloudx.sdk.CloudX
+```
 
-Use `haiku` model for faster execution since this is primarily command execution and output parsing, not complex analysis.
+**Causes:**
+- ProGuard/R8 aggressively removing CloudX classes
+- Missing ProGuard rules
 
-Skip unnecessary output - only report:
-1. Success/failure status
-2. Error locations and messages
-3. Suggested fixes
-4. Next steps
+**Solutions:**
+1. Add ProGuard rules to `proguard-rules.pro`:
+   ```proguard
+   # CloudX SDK
+   -keep class io.cloudx.sdk.** { *; }
+   -keepclassmembers class io.cloudx.sdk.** { *; }
+   ```
 
-Be concise but accurate. Developers need quick feedback, not verbose logs.
+2. CloudX SDK should already include consumer ProGuard rules
+3. Check if `-dontobfuscate` is needed for debugging
+
+### Error 7: Kotlin Version Mismatch
+
+**Error message:**
+```
+Module was compiled with an incompatible version of Kotlin
+```
+
+**Causes:**
+- Project Kotlin version incompatible with CloudX SDK
+- Kotlin stdlib conflict
+
+**Solutions:**
+1. Update Kotlin version in `build.gradle`:
+   ```gradle
+   ext.kotlin_version = '1.9.22' // or higher
+   ```
+
+2. Sync Kotlin versions across modules
+3. Update Kotlin Gradle plugin
+
+### Error 8: Missing Permissions
+
+**Runtime error:**
+```
+java.lang.SecurityException: Permission denied
+```
+
+**Causes:**
+- Missing INTERNET or ACCESS_NETWORK_STATE permissions
+
+**Solutions:**
+Add to `AndroidManifest.xml`:
+```xml
+<uses-permission android:name="android.permission.INTERNET" />
+<uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+```
+
+## Build Output Validation
+
+### Success Criteria
+
+A successful build should show:
+
+```
+BUILD SUCCESSFUL in Xs Ys
+```
+
+**Verification checklist:**
+- [ ] Zero compilation errors
+- [ ] Zero CloudX-related warnings (except deprecated `initServer`)
+- [ ] All CloudX imports resolve
+- [ ] All CloudX APIs are accessible
+- [ ] ProGuard/R8 doesn't remove CloudX classes
+- [ ] Manifest merge succeeds
+- [ ] All required permissions present
+
+### Failure Indicators
+
+Look for these indicators in build output:
+
+**Compilation failure:**
+```
+FAILURE: Build failed with an exception.
+```
+
+**Error indicators:**
+- `error:` - Compilation error
+- `Unresolved reference:` - Missing dependency or import
+- `Type mismatch:` - Wrong API signature
+- `Cannot find symbol:` - Missing class or method
+- `Duplicate class:` - Dependency conflict
+- `Manifest merger failed:` - Manifest conflict
+
+### Warning Indicators
+
+Look for these warnings:
+
+**Acceptable warnings:**
+- `CloudXInitializationParams.initServer` is deprecated (SDK 0.8.0)
+
+**Unacceptable warnings:**
+- Any CloudX public API marked as deprecated (should not exist in 0.8.0)
+- Unresolved CloudX references
+- Missing CloudX classes
+
+## Build Script Examples
+
+### Full Build Verification Script
+
+```bash
+#!/bin/bash
+
+echo "CloudX Android Build Verification"
+echo "=================================="
+echo ""
+
+# Step 1: Clean
+echo "Step 1: Cleaning build..."
+./gradlew clean
+if [ $? -ne 0 ]; then
+    echo "ERROR: Clean failed"
+    exit 1
+fi
+echo "Clean successful"
+echo ""
+
+# Step 2: Check dependency
+echo "Step 2: Checking CloudX dependency..."
+if grep -q "io.cloudx:cloudx-android:0.8.0" app/build.gradle; then
+    echo "CloudX SDK 0.8.0 found in dependencies"
+else
+    echo "WARNING: CloudX SDK 0.8.0 not found in dependencies"
+fi
+echo ""
+
+# Step 3: Build debug
+echo "Step 3: Building debug variant..."
+./gradlew assembleDebug
+if [ $? -ne 0 ]; then
+    echo "ERROR: Debug build failed"
+    exit 1
+fi
+echo "Debug build successful"
+echo ""
+
+# Step 4: Build release
+echo "Step 4: Building release variant..."
+./gradlew assembleRelease
+if [ $? -ne 0 ]; then
+    echo "ERROR: Release build failed"
+    exit 1
+fi
+echo "Release build successful"
+echo ""
+
+# Step 5: Run tests
+echo "Step 5: Running unit tests..."
+./gradlew testDebugUnitTest
+if [ $? -ne 0 ]; then
+    echo "WARNING: Some tests failed"
+else
+    echo "All tests passed"
+fi
+echo ""
+
+echo "=================================="
+echo "Build verification complete!"
+echo "All builds successful"
+```
+
+### Quick Build Check
+
+```bash
+# Quick check: Clean and build debug
+./gradlew clean assembleDebug
+```
+
+### Check for CloudX Errors
+
+```bash
+# Build and grep for CloudX errors
+./gradlew assembleDebug 2>&1 | grep -i "cloudx"
+```
+
+## Dependency Verification
+
+### Check CloudX SDK Version
+
+Read from `build.gradle`:
+
+```bash
+grep "io.cloudx:cloudx-android" app/build.gradle
+```
+
+**Expected output:**
+```gradle
+implementation 'io.cloudx:cloudx-android:0.8.0'
+```
+
+### Verify No Version Conflicts
+
+```bash
+./gradlew app:dependencies | grep cloudx
+```
+
+Should show single CloudX version (0.8.0).
+
+### Check for Transitive Dependencies
+
+```bash
+./gradlew app:dependencies --configuration debugRuntimeClasspath | grep cloudx
+```
+
+## ProGuard/R8 Verification
+
+### Check ProGuard Rules
+
+If using ProGuard/R8, verify rules are present:
+
+```bash
+cat app/proguard-rules.pro | grep -A 2 "CloudX"
+```
+
+**Expected:**
+```proguard
+# CloudX SDK
+-keep class io.cloudx.sdk.** { *; }
+-keepclassmembers class io.cloudx.sdk.** { *; }
+```
+
+### Test Release Build with ProGuard
+
+```bash
+./gradlew assembleRelease --info | grep -i "cloudx"
+```
+
+Check that CloudX classes are not being removed.
+
+### Check APK Contents
+
+```bash
+# Build release APK
+./gradlew assembleRelease
+
+# Check CloudX classes in APK
+unzip -l app/build/outputs/apk/release/app-release.apk | grep cloudx
+```
+
+Should show CloudX SDK classes present.
+
+## Integration Test Build
+
+If integration tests exist:
+
+```bash
+./gradlew assembleDebugAndroidTest
+```
+
+Verify CloudX SDK works in Android test environment.
+
+## Build Performance
+
+Track build times:
+
+```bash
+# Build with profiling
+./gradlew assembleDebug --profile
+```
+
+Check `build/reports/profile/` for build performance report.
+
+CloudX SDK should not significantly impact build time.
+
+## Verification Report Format
+
+Generate a build verification report:
+
+```
+CloudX Android Build Verification Report
+=========================================
+
+SDK Version: 0.8.0
+Build Date: [DATE]
+Project: [PROJECT_NAME]
+
+DEPENDENCY CHECK
+================
+CloudX SDK Version: 0.8.0 ✓
+SDK Present: YES ✓
+Version Conflicts: NONE ✓
+
+BUILD RESULTS
+=============
+Clean Build: SUCCESS ✓
+Debug Build: SUCCESS ✓
+Release Build: SUCCESS ✓
+Unit Tests: SUCCESS ✓
+
+COMPILATION
+===========
+CloudX Imports: RESOLVED ✓
+API Usage: CORRECT ✓
+Deprecation Warnings: 1 (expected: initServer)
+Compilation Errors: 0 ✓
+
+PROGUARD/R8
+===========
+Release Build: SUCCESS ✓
+CloudX Classes: PRESERVED ✓
+Obfuscation: NO ISSUES ✓
+
+MANIFEST
+========
+Merge Status: SUCCESS ✓
+Permissions: PRESENT ✓
+Application Class: REGISTERED ✓
+
+CONCLUSION
+==========
+Build Status: ✓ ALL CHECKS PASSED
+
+CloudX SDK integration builds successfully.
+Ready for runtime testing.
+```
+
+## Common Build Issues and Solutions
+
+### Issue 1: Gradle Daemon Issues
+
+**Symptoms:**
+- Builds hang
+- Gradle errors
+- Compilation never completes
+
+**Solution:**
+```bash
+# Stop Gradle daemon
+./gradlew --stop
+
+# Clear Gradle cache
+rm -rf ~/.gradle/caches/
+
+# Rebuild
+./gradlew clean assembleDebug
+```
+
+### Issue 2: Kotlin Compiler Issues
+
+**Symptoms:**
+- Kotlin compilation errors
+- KAPT errors
+
+**Solution:**
+```bash
+# Clean Kotlin cache
+./gradlew cleanBuildCache
+
+# Rebuild with Kotlin verbose
+./gradlew assembleDebug -Dkotlin.compiler.execution.strategy=in-process
+```
+
+### Issue 3: Dependency Resolution Failures
+
+**Symptoms:**
+- "Could not resolve dependency"
+- "Failed to download"
+
+**Solution:**
+```bash
+# Refresh dependencies
+./gradlew --refresh-dependencies assembleDebug
+
+# Or specify repositories in build.gradle
+repositories {
+    google()
+    mavenCentral()
+    maven { url 'https://sdk.cloudx.io/android/releases' }
+}
+```
+
+## Build Automation
+
+### CI/CD Integration
+
+For GitHub Actions, GitLab CI, Jenkins, etc.:
+
+```yaml
+# Example: GitHub Actions
+- name: Build with CloudX SDK
+  run: |
+    chmod +x ./gradlew
+    ./gradlew clean assembleDebug assembleRelease
+
+- name: Verify CloudX Integration
+  run: |
+    # Check CloudX dependency
+    grep -q "io.cloudx:cloudx-android:0.8.0" app/build.gradle
+
+    # Verify APK built successfully
+    test -f app/build/outputs/apk/debug/app-debug.apk
+    test -f app/build/outputs/apk/release/app-release-unsigned.apk
+```
+
+### Pre-commit Hook
+
+Add build check to pre-commit:
+
+```bash
+#!/bin/bash
+# .git/hooks/pre-commit
+
+echo "Running CloudX build check..."
+./gradlew assembleDebug
+
+if [ $? -ne 0 ]; then
+    echo "ERROR: Build failed. Commit aborted."
+    exit 1
+fi
+
+echo "Build successful. Proceeding with commit."
+```
+
+## Success Criteria
+
+Before considering build verification complete:
+
+- [ ] Debug build completes without errors
+- [ ] Release build completes without errors (ProGuard/R8)
+- [ ] CloudX SDK version is 0.8.0
+- [ ] No unresolved CloudX references
+- [ ] No CloudX API deprecation warnings (except `initServer`)
+- [ ] No manifest merge conflicts
+- [ ] All required permissions present
+- [ ] Application class registered in manifest
+- [ ] ProGuard rules present (if using code shrinking)
+- [ ] APK contains CloudX SDK classes
+- [ ] Unit tests pass (if applicable)
+
+## Next Steps
+
+After successful build verification:
+
+1. Run app on device/emulator for runtime testing
+2. Verify CloudX SDK initializes correctly
+3. Test all ad formats load and display
+4. Test fallback logic works
+5. Verify privacy compliance
+6. Conduct full QA testing
+7. Deploy to production
+
+## Support
+
+If build issues persist:
+
+- Check CloudX documentation: https://docs.cloudx.io/android
+- Review SDK changelog for breaking changes
+- Contact CloudX support: support@cloudx.io
+- Check GitHub issues: https://github.com/cloudx-io/cloudexchange.android.sdk/issues
