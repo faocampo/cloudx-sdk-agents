@@ -186,7 +186,26 @@ cloudxAd.listener = object : CloudXAdListener {
 grep -A3 "onAdLoadFailed" --include="*.kt" --include="*.java"
 ```
 
-### 7. Breaking Changes
+### 7. Dependencies Check
+
+**Verify correct dependencies (v0.8.0):**
+```bash
+grep "io.cloudx:sdk\|io.cloudx:adapter" build.gradle app/build.gradle build.gradle.kts app/build.gradle.kts
+```
+
+Expected:
+```gradle
+implementation("io.cloudx:sdk:0.8.0")
+implementation("io.cloudx:adapter-cloudx:0.8.0")
+implementation("io.cloudx:adapter-meta:0.8.0")
+```
+
+**Verify mavenCentral():**
+```bash
+grep -r "mavenCentral" settings.gradle settings.gradle.kts
+```
+
+### 8. Breaking Changes
 
 **v0.7.x to v0.8.0:**
 - No breaking changes in public APIs
@@ -199,7 +218,7 @@ grep -A3 "onAdLoadFailed" --include="*.kt" --include="*.java"
 **Verify:**
 ```bash
 # Check SDK version in build.gradle
-grep "io.cloudx:cloudx-android-sdk" build.gradle app/build.gradle
+grep "io.cloudx:sdk" build.gradle app/build.gradle build.gradle.kts app/build.gradle.kts
 ```
 
 ## Audit Workflow
@@ -245,6 +264,8 @@ grep -A5 "onAdLoadFailed" --include="*.kt" --include="*.java"
 - Missing listener implementations
 - Using deprecated CloudXInitializationServer parameter explicitly
 - Listener set after load() call
+- Wrong artifact ID (e.g., "cloudx-android-sdk" instead of "sdk")
+- Missing adapter dependencies (adapter-cloudx, adapter-meta)
 
 ## Audit Report Template
 

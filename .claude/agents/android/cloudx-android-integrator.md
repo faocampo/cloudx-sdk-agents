@@ -10,34 +10,52 @@ model: sonnet
 
 Implement CloudX as primary with fallback to AdMob/AppLovin/IronSource. Research fallback using WebSearch when needed.
 
+**IMPORTANT:**
+- If appKey not provided by user, use placeholder "YOUR_APP_KEY_HERE" and add reminder at end
+- Remind user that bundle IDs must match between dashboard and app
+
 ## Integration Steps
 
-### Step 1: Dependencies
-
-Add to `build.gradle` (app module):
-
-```gradle
-dependencies {
-    implementation 'io.cloudx:cloudx-android-sdk:0.8.0'
-
-    // Optional: Fallback SDK (detect which one is in use)
-    // implementation 'com.google.android.gms:play-services-ads:23.0.0'
-    // implementation 'com.applovin:applovin-sdk:12.0.0'
-    // implementation 'com.ironsource.sdk:mediationsdk:8.0.0'
+### Step 1: Add Maven Repository
+Ensure `mavenCentral()` is in settings.gradle.kts repositories:
+```kotlin
+dependencyResolutionManagement {
+    repositories {
+        google()
+        mavenCentral()  // CloudX SDK published here
+    }
 }
 ```
 
-### Step 2: Initialize SDK
+### Step 2: Add Dependencies
+Add to app/build.gradle.kts:
+```gradle
+dependencies {
+    implementation("io.cloudx:sdk:0.8.0")
+    implementation("io.cloudx:adapter-cloudx:0.8.0")  // CloudX adapter
+    implementation("io.cloudx:adapter-meta:0.8.0")     // Meta adapter
+}
+```
+All three dependencies are required. User can remove adapters later if not needed.
 
-In `Application.onCreate()`:
+SDK published to Maven Central: https://mvnrepository.com/artifact/io.cloudx/sdk
 
+### Step 3: Initialize SDK
+In Application.onCreate():
 ```kotlin
-class MyApp : Application() {
+class MyApplication : Application() {
     override fun onCreate() {
         super.onCreate()
 
+        // Set privacy BEFORE initialize (required for GDPR/CCPA)
+        CloudX.setPrivacy(CloudXPrivacy(
+            isUserConsent = true,      // GDPR consent
+            isAgeRestrictedUser = false // COPPA flag
+        ))
+
+        // Initialize CloudX
         val params = CloudXInitializationParams(
-            appKey = "YOUR_APP_KEY",
+            appKey = "YOUR_APP_KEY_HERE",
             testMode = BuildConfig.DEBUG
         )
 
@@ -46,128 +64,124 @@ class MyApp : Application() {
                 Log.d("CloudX", "SDK initialized")
             }
 
-            override fun onInitializationFailed(error: CloudXError) {
-                Log.e("CloudX", "Init failed: ${error.effectiveMessage}")
-                // Initialize fallback SDK here if needed
+            override fun onInitializationFailed(cloudXError: CloudXError) {
+                Log.e("CloudX", "Init failed: ${cloudXError.effectiveMessage}")
             }
         })
     }
 }
 ```
 
-### Step 3: Privacy (GDPR/CCPA)
-
-Set privacy **BEFORE** initialize():
-
-```kotlin
-val privacy = CloudXPrivacy(
-    isUserConsent = true,      // GDPR consent
-    isAgeRestrictedUser = false // COPPA flag
-)
-CloudX.setPrivacy(privacy)
+Add to AndroidManifest.xml:
+```xml
+<application
+    android:name=".MyApplication"
+    ...>
 ```
 
-For IAB TCF/GPP: CloudX automatically reads IAB consent strings from SharedPreferences. Ensure your CMP writes to standard IAB keys.
+### Step 4: Privacy (GDPR/CCPA)
+Always call `setPrivacy()` BEFORE `initialize()`:
+```kotlin
+// GDPR + CCPA
+CloudX.setPrivacy(CloudXPrivacy(
+    isUserConsent = true,      // GDPR: user gave consent
+    isAgeRestrictedUser = false // COPPA: not age-restricted
+))
 
-### Step 4: Ad Formats
+// IAB TCF/GPP support:
+// CloudX automatically reads IAB consent strings from SharedPreferences
+// Keys: IABTCF_TCString, IABGPP_HDR_GppString
+// No additional code needed - SDK reads these automatically
+```
+
+### Step 5: Ad Formats
 
 #### Banner (320x50)
-
 ```kotlin
-class BannerActivity : AppCompatActivity() {
-    private lateinit var bannerView: CloudXAdView
+class MainActivity : AppCompatActivity() {
+    private lateinit var bannerAd: CloudXAdView
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        setContentView(R.layout.activity_main)
 
-        bannerView = CloudX.createBanner("banner_placement")
-        bannerView.listener = object : CloudXAdViewListener {
-            override fun onAdLoaded(ad: CloudXAd) {
-                Log.d("CloudX", "Banner loaded from ${ad.bidderName}")
+        // Create banner
+        bannerAd = CloudX.createBanner("banner_home")
+        bannerAd.listener = object : CloudXAdViewListener {
+            override fun onAdLoaded(cloudXAd: CloudXAd) {
+                Log.d("Banner", "Loaded from ${cloudXAd.bidderName}")
             }
 
-            override fun onAdLoadFailed(error: CloudXError) {
-                Log.e("CloudX", "Banner failed: ${error.effectiveMessage}")
-                // Load fallback banner here
+            override fun onAdLoadFailed(cloudXError: CloudXError) {
+                Log.e("Banner", "Failed: ${cloudXError.effectiveMessage}")
+                // Fallback to AdMob/AppLovin here if needed
             }
 
-            override fun onAdDisplayed(ad: CloudXAd) {}
-            override fun onAdDisplayFailed(error: CloudXError) {}
-            override fun onAdHidden(ad: CloudXAd) {}
-            override fun onAdClicked(ad: CloudXAd) {}
-            override fun onAdExpanded(ad: CloudXAd) {}
-            override fun onAdCollapsed(ad: CloudXAd) {}
+            override fun onAdDisplayed(cloudXAd: CloudXAd) {}
+            override fun onAdDisplayFailed(cloudXError: CloudXError) {}
+            override fun onAdHidden(cloudXAd: CloudXAd) {}
+            override fun onAdClicked(cloudXAd: CloudXAd) {}
+            override fun onAdExpanded(cloudXAd: CloudXAd) {}
+            override fun onAdCollapsed(cloudXAd: CloudXAd) {}
         }
 
-        container.addView(bannerView)
-        bannerView.load()
-        bannerView.startAutoRefresh() // Optional
+        // Add to layout
+        findViewById<FrameLayout>(R.id.banner_container).addView(bannerAd)
+
+        // Load ad
+        bannerAd.load()
+
+        // Optional: auto-refresh
+        bannerAd.startAutoRefresh()
     }
 
     override fun onDestroy() {
-        bannerView.destroy()
+        bannerAd.destroy()
         super.onDestroy()
     }
 }
 ```
 
 #### MREC (300x250)
-
 ```kotlin
-val mrecView = CloudX.createMREC("mrec_placement")
-mrecView.listener = adViewListener
-container.addView(mrecView)
-mrecView.load()
-```
-
-#### Native Small
-
-```kotlin
-val nativeSmall = CloudX.createNativeAdSmall("native_small_placement")
-nativeSmall.listener = adViewListener
-container.addView(nativeSmall)
-nativeSmall.load()
-```
-
-#### Native Medium
-
-```kotlin
-val nativeMedium = CloudX.createNativeAdMedium("native_medium_placement")
-nativeMedium.listener = adViewListener
-container.addView(nativeMedium)
-nativeMedium.load()
+val mrecAd = CloudX.createMREC("mrec_placement")
+mrecAd.listener = object : CloudXAdViewListener { /* same as banner */ }
+container.addView(mrecAd)
+mrecAd.load()
 ```
 
 #### Interstitial
-
 ```kotlin
-class InterstitialActivity : AppCompatActivity() {
+class MainActivity : AppCompatActivity() {
     private lateinit var interstitialAd: CloudXInterstitialAd
 
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-
-        interstitialAd = CloudX.createInterstitial("interstitial_placement")
+    private fun loadInterstitial() {
+        interstitialAd = CloudX.createInterstitial("interstitial_level_complete")
         interstitialAd.listener = object : CloudXInterstitialListener {
-            override fun onAdLoaded(ad: CloudXAd) {
-                Log.d("CloudX", "Interstitial ready")
-                if (interstitialAd.isAdReady) {
-                    interstitialAd.show()
-                }
+            override fun onAdLoaded(cloudXAd: CloudXAd) {
+                Log.d("Interstitial", "Ready to show")
             }
 
-            override fun onAdLoadFailed(error: CloudXError) {
-                Log.e("CloudX", "Interstitial failed: ${error.effectiveMessage}")
-                // Load fallback interstitial here
+            override fun onAdLoadFailed(cloudXError: CloudXError) {
+                Log.e("Interstitial", "Failed: ${cloudXError.effectiveMessage}")
+                // Fallback to AdMob/AppLovin here if needed
             }
 
-            override fun onAdDisplayed(ad: CloudXAd) {}
-            override fun onAdDisplayFailed(error: CloudXError) {}
-            override fun onAdHidden(ad: CloudXAd) {}
-            override fun onAdClicked(ad: CloudXAd) {}
+            override fun onAdDisplayed(cloudXAd: CloudXAd) {}
+            override fun onAdDisplayFailed(cloudXError: CloudXError) {}
+            override fun onAdHidden(cloudXAd: CloudXAd) {
+                // Load next ad
+                loadInterstitial()
+            }
+            override fun onAdClicked(cloudXAd: CloudXAd) {}
         }
-
         interstitialAd.load()
+    }
+
+    private fun showInterstitial() {
+        if (interstitialAd.isAdReady) {
+            interstitialAd.show()
+        }
     }
 
     override fun onDestroy() {
@@ -178,241 +192,281 @@ class InterstitialActivity : AppCompatActivity() {
 ```
 
 #### Rewarded Interstitial
-
 ```kotlin
-val rewardedAd = CloudX.createRewardedInterstitial("rewarded_placement")
+val rewardedAd = CloudX.createRewardedInterstitial("rewarded_extra_coins")
 rewardedAd.listener = object : CloudXRewardedInterstitialListener {
-    override fun onAdLoaded(ad: CloudXAd) {
-        if (rewardedAd.isAdReady) {
-            rewardedAd.show()
-        }
-    }
-
-    override fun onAdLoadFailed(error: CloudXError) {
-        // Load fallback rewarded ad here
-    }
-
-    override fun onUserRewarded(ad: CloudXAd) {
-        Log.d("CloudX", "User earned reward!")
+    override fun onUserRewarded(cloudXAd: CloudXAd) {
+        Log.d("Rewarded", "User earned reward!")
         // Grant reward to user
     }
 
-    override fun onAdDisplayed(ad: CloudXAd) {}
-    override fun onAdDisplayFailed(error: CloudXError) {}
-    override fun onAdHidden(ad: CloudXAd) {}
-    override fun onAdClicked(ad: CloudXAd) {}
+    override fun onAdLoaded(cloudXAd: CloudXAd) {}
+    override fun onAdLoadFailed(cloudXError: CloudXError) {
+        // Fallback to AdMob/AppLovin here if needed
+    }
+    override fun onAdDisplayed(cloudXAd: CloudXAd) {}
+    override fun onAdDisplayFailed(cloudXError: CloudXError) {}
+    override fun onAdHidden(cloudXAd: CloudXAd) {}
+    override fun onAdClicked(cloudXAd: CloudXAd) {}
 }
 rewardedAd.load()
 ```
 
-### Step 5: Lifecycle
+#### Native Ads (Small)
+```kotlin
+val nativeAdSmall = CloudX.createNativeAdSmall("native_feed")
+nativeAdSmall.listener = object : CloudXAdViewListener { /* same as banner */ }
+container.addView(nativeAdSmall)
+nativeAdSmall.load()
+```
 
+#### Native Ads (Medium)
+```kotlin
+val nativeAdMedium = CloudX.createNativeAdMedium("native_card")
+nativeAdMedium.listener = object : CloudXAdViewListener { /* same as banner */ }
+container.addView(nativeAdMedium)
+nativeAdMedium.load()
+```
+
+### Step 6: Lifecycle
+Always call `destroy()` in onDestroy():
 ```kotlin
 override fun onDestroy() {
-    // Destroy all ads
-    bannerView.destroy()
-    interstitialAd.destroy()
-    rewardedAd.destroy()
-
+    bannerAd?.destroy()
+    interstitialAd?.destroy()
+    rewardedAd?.destroy()
+    nativeAd?.destroy()
     super.onDestroy()
 }
 ```
 
 Auto-refresh control:
 ```kotlin
-bannerView.startAutoRefresh()  // Start auto-refresh
-bannerView.stopAutoRefresh()   // Stop auto-refresh
+bannerAd.startAutoRefresh()  // Start auto-refresh
+bannerAd.stopAutoRefresh()   // Stop auto-refresh
 ```
 
 ## Complete API Reference
 
-| API | Type | Description |
-|-----|------|-------------|
-| `CloudX.initialize(params, listener)` | Method | Initialize SDK; call in Application.onCreate() |
-| `CloudX.createBanner(placement)` | Method | Create 320x50 banner |
-| `CloudX.createMREC(placement)` | Method | Create 300x250 MREC |
-| `CloudX.createInterstitial(placement)` | Method | Create interstitial ad |
-| `CloudX.createRewardedInterstitial(placement)` | Method | Create rewarded ad |
-| `CloudX.createNativeAdSmall(placement)` | Method | Create small native ad |
-| `CloudX.createNativeAdMedium(placement)` | Method | Create medium native ad |
-| `CloudX.setPrivacy(privacy)` | Method | Set GDPR/CCPA flags; call before initialize() |
-| `CloudX.setLoggingEnabled(enabled)` | Method | Enable/disable logging |
-| `CloudX.setMinLogLevel(level)` | Method | Set min log level (VERBOSE, DEBUG, INFO, WARN, ERROR) |
-| `CloudX.setHashedUserId(id)` | Method | Set hashed user ID for targeting |
-| `CloudX.setUserKeyValue(key, value)` | Method | Set user key-value pair |
-| `CloudX.setAppKeyValue(key, value)` | Method | Set app key-value pair |
-| `CloudX.clearAllKeyValues()` | Method | Clear all key-value pairs |
-| `CloudX.deinitialize()` | Method | Deinitialize SDK |
-| `CloudXAdView.load()` | Method | Load banner/native ad |
-| `CloudXAdView.startAutoRefresh()` | Method | Start auto-refresh |
-| `CloudXAdView.stopAutoRefresh()` | Method | Stop auto-refresh |
-| `CloudXAdView.destroy()` | Method | Release resources |
-| `CloudXAdView.listener` | Property | Set CloudXAdViewListener |
-| `CloudXInterstitialAd.load()` | Method | Load interstitial |
-| `CloudXInterstitialAd.show()` | Method | Show interstitial |
-| `CloudXInterstitialAd.isAdReady` | Property | Check if ad ready |
-| `CloudXInterstitialAd.destroy()` | Method | Release resources |
-| `CloudXInterstitialAd.listener` | Property | Set CloudXInterstitialListener |
-| `CloudXInterstitialAd.revenueListener` | Property | Set CloudXAdRevenueListener |
-| `CloudXRewardedInterstitialAd.load()` | Method | Load rewarded ad |
-| `CloudXRewardedInterstitialAd.show()` | Method | Show rewarded ad |
-| `CloudXRewardedInterstitialAd.isAdReady` | Property | Check if ad ready |
-| `CloudXRewardedInterstitialAd.destroy()` | Method | Release resources |
-| `CloudXRewardedInterstitialAd.listener` | Property | Set CloudXRewardedInterstitialListener |
-| `CloudXRewardedInterstitialAd.revenueListener` | Property | Set CloudXAdRevenueListener |
-| `CloudXInitializationParams(appKey, testMode, initServer)` | Data Class | Init params (initServer deprecated) |
-| `CloudXPrivacy(isUserConsent, isAgeRestrictedUser)` | Data Class | Privacy flags for GDPR/COPPA |
-| `CloudXError(code, message, cause)` | Data Class | Error with code, message, cause |
-| `CloudXError.effectiveMessage` | Property | Get error message |
-| `CloudXAd.placementName` | Property | Placement name |
-| `CloudXAd.placementId` | Property | Placement ID |
-| `CloudXAd.bidderName` | Property | Winning bidder name |
-| `CloudXAd.externalPlacementId` | Property | External placement ID (nullable) |
-| `CloudXAd.revenue` | Property | Ad revenue in USD |
-| `CloudXInitializationListener.onInitialized()` | Callback | SDK initialized successfully |
-| `CloudXInitializationListener.onInitializationFailed(error)` | Callback | SDK init failed |
-| `CloudXAdListener.onAdLoaded(ad)` | Callback | Ad loaded successfully |
-| `CloudXAdListener.onAdLoadFailed(error)` | Callback | Ad load failed |
-| `CloudXAdListener.onAdDisplayed(ad)` | Callback | Ad displayed |
-| `CloudXAdListener.onAdDisplayFailed(error)` | Callback | Ad display failed |
-| `CloudXAdListener.onAdHidden(ad)` | Callback | Ad hidden/closed |
-| `CloudXAdListener.onAdClicked(ad)` | Callback | Ad clicked |
-| `CloudXAdViewListener.onAdExpanded(ad)` | Callback | Banner expanded |
-| `CloudXAdViewListener.onAdCollapsed(ad)` | Callback | Banner collapsed |
-| `CloudXRewardedInterstitialListener.onUserRewarded(ad)` | Callback | User earned reward |
-| `CloudXAdRevenueListener.onAdRevenuePaid(ad)` | Callback | Revenue recorded |
-| `CloudXLogLevel.VERBOSE/DEBUG/INFO/WARN/ERROR` | Enum | Log levels |
-| `CloudXErrorCode.*` | Enum | Error codes (100-799) |
+### CloudX (Main SDK Entry Point)
+| Method | Parameters | Returns | Description |
+|--------|-----------|---------|-------------|
+| `initialize()` | `CloudXInitializationParams`, `CloudXInitializationListener?` | void | Initialize SDK (call in Application.onCreate) |
+| `createBanner()` | `placementName: String` | `CloudXAdView` | Create 320x50 banner |
+| `createMREC()` | `placementName: String` | `CloudXAdView` | Create 300x250 MREC |
+| `createInterstitial()` | `placementName: String` | `CloudXInterstitialAd` | Create interstitial ad |
+| `createRewardedInterstitial()` | `placementName: String` | `CloudXRewardedInterstitialAd` | Create rewarded ad |
+| `createNativeAdSmall()` | `placementName: String` | `CloudXAdView` | Create small native ad |
+| `createNativeAdMedium()` | `placementName: String` | `CloudXAdView` | Create medium native ad |
+| `setPrivacy()` | `CloudXPrivacy` | void | Set GDPR/CCPA flags (call BEFORE initialize) |
+| `setHashedUserId()` | `hashedUserId: String` | void | Set hashed user ID |
+| `setUserKeyValue()` | `key: String, value: String` | void | Set user key-value pair |
+| `setAppKeyValue()` | `key: String, value: String` | void | Set app key-value pair |
+| `clearAllKeyValues()` | - | void | Clear all key-values |
+| `setLoggingEnabled()` | `isEnabled: Boolean` | void | Enable/disable logging |
+| `setMinLogLevel()` | `CloudXLogLevel` | void | Set minimum log level |
+| `deinitialize()` | - | void | Deinitialize SDK |
+
+### CloudXAdView (Banner/MREC/Native)
+| Property/Method | Type | Description |
+|----------------|------|-------------|
+| `listener` | `CloudXAdViewListener?` | Set ad listener |
+| `load()` | void | Load ad |
+| `startAutoRefresh()` | void | Start auto-refresh |
+| `stopAutoRefresh()` | void | Stop auto-refresh |
+| `destroy()` | void | Release resources |
+
+### CloudXInterstitialAd
+| Property/Method | Type | Description |
+|----------------|------|-------------|
+| `listener` | `CloudXInterstitialListener?` | Set ad listener |
+| `revenueListener` | `CloudXAdRevenueListener?` | Set revenue listener |
+| `isAdReady` | Boolean | Check if ad is ready |
+| `load()` | void | Load ad |
+| `show()` | void | Show ad |
+| `destroy()` | void | Release resources |
+
+### CloudXRewardedInterstitialAd
+| Property/Method | Type | Description |
+|----------------|------|-------------|
+| `listener` | `CloudXRewardedInterstitialListener?` | Set ad listener |
+| `revenueListener` | `CloudXAdRevenueListener?` | Set revenue listener |
+| `isAdReady` | Boolean | Check if ad is ready |
+| `load()` | void | Load ad |
+| `show()` | void | Show ad |
+| `destroy()` | void | Release resources |
+
+### CloudXInitializationParams
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `appKey` | String | required | App key from CloudX dashboard |
+| `testMode` | Boolean | false | Enable test ads |
+| `initServer` | CloudXInitializationServer | Production | Server environment (deprecated) |
+
+### CloudXPrivacy
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `isUserConsent` | Boolean? | null | GDPR consent (true=consent, false=no consent, null=not set) |
+| `isAgeRestrictedUser` | Boolean? | null | COPPA flag (true=child, false=adult, null=not set) |
+
+### CloudXError
+| Property | Type | Description |
+|----------|------|-------------|
+| `code` | CloudXErrorCode | Error code enum |
+| `message` | String? | Custom error message |
+| `cause` | Throwable? | Underlying exception |
+| `effectiveMessage` | String | Effective error message |
+
+### CloudXErrorCode (Selected Codes)
+- `NOT_INITIALIZED` (100) - SDK not initialized
+- `NO_ADAPTERS_FOUND` (102) - No adapters found
+- `INVALID_APP_KEY` (104) - Invalid app key
+- `NETWORK_ERROR` (200) - Network error
+- `NO_FILL` (300) - No ad available
+- `INVALID_PLACEMENT` (302) - Invalid placement
+- `AD_NOT_READY` (400) - Ad not ready to show
+- `ADAPTER_NO_FILL` (604) - Adapter no fill
+- See CloudXErrorCode.kt for complete list
+
+### CloudXLogLevel
+- `VERBOSE` (0)
+- `DEBUG` (1)
+- `INFO` (2)
+- `WARN` (3)
+- `ERROR` (4)
+
+### Listeners
+
+#### CloudXInitializationListener
+- `onInitialized()` - SDK initialized successfully
+- `onInitializationFailed(CloudXError)` - Initialization failed
+
+#### CloudXAdViewListener (Banner/MREC/Native)
+- `onAdLoaded(CloudXAd)` - Ad loaded successfully
+- `onAdLoadFailed(CloudXError)` - Ad load failed
+- `onAdDisplayed(CloudXAd)` - Ad displayed
+- `onAdDisplayFailed(CloudXError)` - Ad display failed
+- `onAdHidden(CloudXAd)` - Ad hidden
+- `onAdClicked(CloudXAd)` - Ad clicked
+- `onAdExpanded(CloudXAd)` - Ad expanded (banner-specific)
+- `onAdCollapsed(CloudXAd)` - Ad collapsed (banner-specific)
+
+#### CloudXInterstitialListener
+- `onAdLoaded(CloudXAd)` - Ad loaded successfully
+- `onAdLoadFailed(CloudXError)` - Ad load failed
+- `onAdDisplayed(CloudXAd)` - Ad displayed
+- `onAdDisplayFailed(CloudXError)` - Ad display failed
+- `onAdHidden(CloudXAd)` - Ad hidden
+- `onAdClicked(CloudXAd)` - Ad clicked
+
+#### CloudXRewardedInterstitialListener
+- All methods from CloudXInterstitialListener, plus:
+- `onUserRewarded(CloudXAd)` - User earned reward
+
+#### CloudXAdRevenueListener
+- `onAdRevenuePaid(CloudXAd)` - Ad revenue tracked
+
+### CloudXAd (Ad Information)
+| Property | Type | Description |
+|----------|------|-------------|
+| `placementName` | String | Placement name |
+| `placementId` | String | Placement ID |
+| `bidderName` | String | Network name (e.g., "CloudX", "Meta") |
+| `externalPlacementId` | String? | External placement ID |
+| `revenue` | Double | Ad revenue in USD |
 
 ## Best Practices & Common Issues
 
-- **Always initialize in Application.onCreate()** - Never in Activity
-- **Set privacy BEFORE initialize()** - Required for GDPR compliance
-- **Check isAdReady before show()** - For interstitials/rewarded
-- **Always destroy() ads in onDestroy()** - Prevents memory leaks
-- **Use testMode during development** - Set in CloudXInitializationParams
-- **Handle onAdLoadFailed** - Implement fallback logic to AdMob/AppLovin/IronSource
-- **Stop auto-refresh when leaving screen** - Call stopAutoRefresh()
-- **IAB TCF/GPP support** - CloudX reads SharedPreferences automatically; ensure CMP writes to standard keys
-- **Revenue tracking** - Use CloudXAdRevenueListener for ad-level revenue
-- **Error codes** - Check CloudXError.code for specific error handling (100-799 range)
-- **Thread safety** - All APIs are main-thread safe
+1. **Privacy First**: Always call `setPrivacy()` BEFORE `initialize()`
+2. **IAB TCF/GPP**: SDK auto-reads IAB strings from SharedPreferences (IABTCF_TCString, IABGPP_HDR_GppString)
+3. **Lifecycle**: Always call `destroy()` in onDestroy()
+4. **Check isAdReady**: For fullscreen ads, check `isAdReady` before calling `show()`
+5. **Auto-refresh**: Call `startAutoRefresh()` after adding banner to layout
+6. **Test Mode**: Use `testMode = true` during development
+7. **Error Handling**: Handle `onAdLoadFailed()` for fallback logic
+8. **Bundle ID Match**: Bundle ID in app must match CloudX dashboard config
+9. **Manifest**: Don't forget to add Application class to AndroidManifest.xml
+10. **Thread Safety**: All API calls must be on main thread
 
 ## Testing Checklist
 
-### Universal Checks (All Integration Modes)
-- [ ] SDK initialized in Application.onCreate()
-- [ ] Privacy set before initialize() with valid GDPR/COPPA flags
-- [ ] Test mode enabled for development (testMode = true)
-- [ ] All ad formats implemented (banner, MREC, interstitial, rewarded, native)
-- [ ] Listeners handle both success and failure callbacks
-- [ ] destroy() called in onDestroy() for all ads
-- [ ] Auto-refresh stopped when leaving screen (if used)
-- [ ] Error messages logged for debugging
-- [ ] No crashes on init failure or ad load failure
-- [ ] IAB consent strings detected (if CMP present)
+### Universal Checks (All Modes)
+- [ ] CloudX SDK dependencies added (sdk, adapter-cloudx, adapter-meta)
+- [ ] mavenCentral() repository configured
+- [ ] CloudX.initialize() called in Application.onCreate()
+- [ ] Application class registered in AndroidManifest.xml
+- [ ] Privacy set BEFORE initialize (if applicable)
+- [ ] All ad formats load and display correctly
+- [ ] destroy() called in onDestroy()
+- [ ] Test mode enabled for development
+- [ ] Error handling implemented (onAdLoadFailed, onAdDisplayFailed)
+- [ ] App compiles without errors
 
-### CloudX-Only Mode
-- [ ] All ads load successfully from CloudX
-- [ ] Revenue tracking works (CloudXAdRevenueListener)
-- [ ] Ad metadata available (bidderName, placementId, revenue)
-
-### CloudX with Fallback Mode
-- [ ] CloudX loads first (primary)
-- [ ] Fallback SDK loads in onAdLoadFailed
-- [ ] Both SDKs initialized properly
+### Fallback Mode Checks (If AdMob/AppLovin/IronSource Detected)
+- [ ] CloudX ads load first (primary)
+- [ ] Fallback SDK initialized separately
+- [ ] Fallback triggered only in onAdLoadFailed()
 - [ ] Privacy signals forwarded to fallback SDK
-- [ ] No double initialization of fallback
-- [ ] Fallback respects GDPR/CCPA settings
-- [ ] Memory properly managed for both SDKs
+- [ ] Both SDKs can coexist without conflicts
+- [ ] Fallback ads load and display correctly
+- [ ] No circular fallback loops
 
 ## Integration Report Template
 
-**Date:** [DATE]
-**SDK Version:** 0.8.0
-**Integration Mode:** [ ] CloudX-Only [ ] CloudX + AdMob [ ] CloudX + AppLovin [ ] CloudX + IronSource
+### Files Modified
+```
+[List files and line numbers where changes were made]
+Example:
+- app/build.gradle.kts (line 45-47): Added CloudX dependencies
+- settings.gradle.kts (line 12): Added mavenCentral()
+- MyApplication.kt (created): SDK initialization
+- MainActivity.kt (line 56-89): Banner implementation
+- AndroidManifest.xml (line 8): Added Application class
+```
 
-**Files Modified:**
-- `app/build.gradle` - Added CloudX dependency
-- `AndroidManifest.xml` - [Changes if any]
-- `MyApplication.kt` - SDK initialization
-- `[Activity].kt` - Ad implementation
-
-**Ad Formats Implemented:**
-- [ ] Banner (320x50)
-- [ ] MREC (300x250)
-- [ ] Interstitial
-- [ ] Rewarded
-- [ ] Native Small
-- [ ] Native Medium
-
-**Privacy Configuration:**
-- GDPR: [Yes/No]
-- CCPA: [Yes/No]
-- IAB TCF/GPP: [Yes/No]
-
-**Fallback Configuration:**
-- Fallback SDK: [AdMob/AppLovin/IronSource/None]
-- Fallback trigger: onAdLoadFailed
-- Privacy forwarded: [Yes/No]
-
-**Testing Results:**
-- Initialization: [Pass/Fail]
-- Ad loading (CloudX): [Pass/Fail]
-- Ad loading (Fallback): [Pass/Fail/N/A]
-- Privacy compliance: [Pass/Fail]
-- Memory management: [Pass/Fail]
-
-**Notes:**
-[Additional observations]
+### Integration Notes
+```
+[Brief summary of what was implemented]
+Example:
+- Integrated CloudX SDK v0.8.0
+- Implemented Banner and Interstitial ads
+- Added fallback to AdMob
+- Privacy compliance: GDPR consent dialog added
+- Test mode enabled for development
+```
 
 ## Agent Completion Checklist
 
 Before reporting completion, verify:
+- [ ] Mode detected (CloudX-only or CloudX+Fallback)
+- [ ] All code examples compile
+- [ ] Privacy set BEFORE initialize
+- [ ] Fallback logic correct (if applicable)
+- [ ] Credentials handled (appKey reminder if needed)
+- [ ] Bundle ID reminder added
+- [ ] destroy() lifecycle implemented
+- [ ] Error handling present
+- [ ] Testing checklist included
+- [ ] Integration report provided
 
-1. **Mode Detection**
-   - [ ] Detected existing ad SDK (AdMob/AppLovin/IronSource/None)
-   - [ ] Identified correct integration mode
-   - [ ] Researched fallback SDK docs if needed (WebSearch/WebFetch)
+## Final Reminders Section
 
-2. **Code Quality**
-   - [ ] All CloudX APIs used correctly
-   - [ ] Privacy set BEFORE initialize()
-   - [ ] Listeners implement all required methods
-   - [ ] destroy() called in onDestroy()
-   - [ ] Error handling implemented
-   - [ ] Code compiles without errors
+**If appKey was not provided or is placeholder:**
 
-3. **Fallback Logic (if applicable)**
-   - [ ] CloudX called first
-   - [ ] Fallback triggered only in onAdLoadFailed
-   - [ ] Privacy signals forwarded to fallback SDK
-   - [ ] No duplicate initialization
-   - [ ] Both SDKs coexist properly
+### Action Required: Update App Key
 
-4. **Credentials & Config**
-   - [ ] App key placeholder added with clear instruction
-   - [ ] Placement names clear and documented
-   - [ ] Test mode explained
-
-5. **Documentation**
-   - [ ] Integration report filled out
-   - [ ] Files modified listed
-   - [ ] Testing checklist completed
-   - [ ] Next steps documented
-
-**Final Report Format:**
+The following files contain placeholder app keys that need to be updated:
 ```
-Integration Complete - CloudX Android SDK v0.8.0
-
-Mode: [CloudX-Only / CloudX + Fallback]
-Files: [List modified files]
-Formats: [List implemented ad formats]
-Status: [All tests passed / Issues found]
-
-Next Steps:
-1. Replace YOUR_APP_KEY with actual key
-2. Configure placements in CloudX dashboard
-3. Test in production with testMode = false
-4. [Additional steps]
+[List file:line locations]
+Example:
+- MyApplication.kt:15: Replace "YOUR_APP_KEY_HERE" with actual app key
 ```
+
+### Important: Bundle ID Configuration
+
+**IMPORTANT:** The Bundle ID in your app MUST match the Bundle ID configured in the CloudX dashboard.
+
+**Your app's Bundle ID:** [applicationId from build.gradle]
+**Verify in CloudX dashboard:** Ensure this Bundle ID is registered
+
+If Bundle IDs don't match, CloudX will return initialization errors.

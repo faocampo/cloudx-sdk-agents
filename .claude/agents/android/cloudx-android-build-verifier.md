@@ -20,12 +20,19 @@ Verify SDK version in build.gradle matches 0.8.0:
 
 ```bash
 # Check CloudX dependency
-grep "io.cloudx:cloudx-android-sdk" app/build.gradle build.gradle.kts app/build.gradle.kts
+grep "io.cloudx:sdk\|io.cloudx:adapter" app/build.gradle build.gradle.kts app/build.gradle.kts
 ```
 
 Expected:
 ```gradle
-implementation("io.cloudx:cloudx-android-sdk:0.8.0")
+implementation("io.cloudx:sdk:0.8.0")
+implementation("io.cloudx:adapter-cloudx:0.8.0")
+implementation("io.cloudx:adapter-meta:0.8.0")
+```
+
+**Check for dependency conflicts:**
+```bash
+./gradlew app:dependencies | grep cloudx
 ```
 
 ### 2. Run Gradle Build
@@ -60,7 +67,7 @@ All imports should resolve:
 - `io.cloudx.sdk.CloudXAdViewListener`
 - `io.cloudx.sdk.CloudXInterstitialListener`
 - `io.cloudx.sdk.CloudXRewardedInterstitialListener`
-- `io.cloudx.sdk.CloudXAdRevenueListener` (new in 0.8.0)
+- `io.cloudx.sdk.CloudXAdRevenueListener`
 - `io.cloudx.sdk.CloudXDestroyable`
 
 **Method signature errors:**
@@ -130,9 +137,11 @@ Verify:
 
 ### Error: "Unresolved reference: CloudX"
 
-**Fix:** Add dependency:
+**Fix:** Add dependencies:
 ```gradle
-implementation("io.cloudx:cloudx-android-sdk:0.8.0")
+implementation("io.cloudx:sdk:0.8.0")
+implementation("io.cloudx:adapter-cloudx:0.8.0")
+implementation("io.cloudx:adapter-meta:0.8.0")
 ```
 
 Then sync Gradle.
@@ -173,6 +182,18 @@ object : CloudXAdViewListener {
 
 Ensure only one version is included.
 
+### Error: mavenCentral() not configured
+
+**Fix:** Add to settings.gradle.kts:
+```kotlin
+dependencyResolutionManagement {
+    repositories {
+        google()
+        mavenCentral()
+    }
+}
+```
+
 ## Success Criteria
 
 - Build completes successfully
@@ -183,6 +204,7 @@ Ensure only one version is included.
 - Manifest properly configured
 - ProGuard/R8 builds work
 - No duplicate dependencies
+- mavenCentral() repository configured
 
 ## Build Report Template
 
